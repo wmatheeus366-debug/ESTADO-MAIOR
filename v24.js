@@ -105,7 +105,7 @@
     const request=url=>fetch(url,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error('fronteiras');return r.json();});
     request(isoAtlas).catch(()=>request(fallbackAtlas)).then(world=>{
       const object=world.objects.countries||world.objects[Object.keys(world.objects)[0]];boundaries=topojson.feature(world,object).features;
-      World.polygonsTransitionDuration(0).polygonSideColor(()=> 'rgba(0,0,0,0)').polygonLabel(f=>{const n=featureNation(f);return n?`<b>${n.nome}</b>${n._collapsed?'<br><span style="color:#aab2bc">ESTADO COLAPSADO</span>':''}`:'';}).onPolygonClick(f=>{const n=featureNation(f);if(n)openDossier(n);}).polygonsData(boundaries);
+      World.polygonsTransitionDuration(0).polygonSideColor(()=> 'rgba(0,0,0,0)').polygonLabel(f=>{const n=featureNation(f);if(!n)return '';const flagMarkup=window.EMMarket?.flagHTML?.(n)||`<span style="font-size:18px">${flag(n.nome)}</span>`;return `<div class="territoryLabelV28">${flagMarkup}<span><b>${n.nome}</b>${n._collapsed?'<small>ESTADO COLAPSADO</small>':''}</span></div>`;}).onPolygonClick(f=>{const n=featureNation(f);if(n)openDossier(n);}).polygonsData(boundaries);
       refreshBoundaryColors();if(status)status.textContent=`${boundaries.length} FRONTEIRAS ATIVAS`;setTimeout(()=>status?.classList.remove('on'),1800);
     }).catch(()=>{if(status)status.textContent='FRONTEIRAS INDISPONÍVEIS';setTimeout(()=>status?.classList.remove('on'),2200);});
   }

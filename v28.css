@@ -7,6 +7,7 @@ body.performance-v28 .eventPointV26{width:16px!important;height:16px!important;b
 body.performance-v28 .eventPointV26:before{inset:4px!important}
 body.performance-v28 .eventPointV26.critical{animation:none!important}
 body.performance-v28 #app canvas{image-rendering:auto}
+.territoryLabelV28{display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid rgba(125,211,252,.22);border-radius:9px;background:rgba(3,9,17,.94);color:#e7f0f4;box-shadow:0 8px 24px rgba(0,0,0,.42)}.territoryLabelV28 .realFlagV27{width:28px!important;height:19px!important}.territoryLabelV28>span{display:flex;flex-direction:column;gap:2px}.territoryLabelV28 b{font-size:11px}.territoryLabelV28 small{color:#aab2bc;font:800 6px var(--mono);letter-spacing:.08em}
 
 #actionResultV28{position:fixed;left:50%;bottom:288px;z-index:220;width:min(620px,calc(100vw - 30px));transform:translate(-50%,16px);padding:13px 14px;border:1px solid rgba(125,211,252,.24);border-radius:15px;background:rgba(4,12,22,.97);box-shadow:0 22px 65px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s}
 #actionResultV28.on{opacity:1;transform:translate(-50%,0)}

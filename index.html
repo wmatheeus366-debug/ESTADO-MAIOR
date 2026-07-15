@@ -92,6 +92,18 @@ function eventDecisionChoices(ev){
       {l:'Enviar ajuda humanitária',t:'Alimentos, médicos e logística.',efeito:'Custo: 0,6% do PIB · +legitimidade',go:m=>{const cost=m.pib*.006;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','O Tesouro não consegue financiar a ajuda.','bad','results');return;}m.caixa-=cost;m.legitimidade+=5;m.diplo+=5;focus();},msg:'Ajuda humanitária enviada'},
       {l:'Liderar coalizão',t:'Dividir custos com parceiros.',efeito:'−2 influência · custo menor',go:m=>{if(influence<2){showResourceWarning('influence',2,influence);return;}influence-=2;m.caixa-=m.pib*.003;m.diplo+=8;m.legitimidade+=4;focus();},msg:'Coalizão internacional formada'},
       {l:'Apenas observar',t:'Não comprometer o orçamento.',efeito:'Sem custo · −reputação',go:m=>{m.diplo-=3;},msg:'Crise ignorada'}],
+    famine:[
+      {l:'Enviar ponte aérea de alimentos',t:'Mobilizar aeronaves e equipes humanitárias.',efeito:'Custo: 0,8% do PIB · +legitimidade',go:m=>{const cost=m.pib*.008;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','A operação humanitária não pôde ser financiada.','bad','results');return;}m.caixa-=cost;m.legitimidade+=6;m.diplo+=7;addTension(-2,'A ajuda internacional reduz a instabilidade regional.');focus();},msg:'Ponte aérea enviada'},
+      {l:'Convocar doadores internacionais',t:'Usar influência para dividir os custos.',efeito:'−2 influência · +diplomacia',go:m=>{if(influence<2){showResourceWarning('influence',2,influence);return;}influence-=2;m.diplo+=9;m.legitimidade+=4;focus();},msg:'Conferência de doadores convocada'},
+      {l:'Não assumir compromisso',t:'Preservar o orçamento nacional.',efeito:'−4 diplomacia',go:m=>{m.diplo-=4;},msg:'Ajuda recusada'}],
+    disease:[
+      {l:'Enviar médicos e vacinas',t:'Conter o surto antes que atravesse fronteiras.',efeito:'Custo: 0,7% do PIB · +saúde',go:m=>{const cost=m.pib*.007;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','A missão sanitária foi cancelada.','bad','results');return;}m.caixa-=cost;m.saude+=5;m.diplo+=6;m.legitimidade+=3;addTension(-3,'A cooperação sanitária contém o surto.');focus();},msg:'Missão sanitária enviada'},
+      {l:'Financiar pesquisa conjunta',t:'Desenvolver diagnóstico e tratamento.',efeito:'Custo: 0,9% do PIB · +ciência',go:m=>{const cost=m.pib*.009;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','A pesquisa não recebeu financiamento.','bad','results');return;}m.caixa-=cost;m.ciencia+=8;m.saude+=3;focus();},msg:'Pesquisa emergencial financiada'},
+      {l:'Fechar fronteiras preventivamente',t:'Reduz risco interno, prejudica relações.',efeito:'+estabilidade · −diplomacia',go:m=>{m.estabilidade+=3;m.diplo-=5;m.pib*=.997;},msg:'Fronteiras restringidas'}],
+    celebration:[
+      {l:'Enviar delegação oficial',t:'Prestigiar a conquista e estreitar relações.',efeito:'−1 influência · +diplomacia',go:m=>{if(influence<1){showResourceWarning('influence',1,influence);return;}influence--;m.diplo+=5;m.aprovacao+=1;focus();},msg:'Delegação enviada'},
+      {l:'Propor festival conjunto',t:'Transformar a celebração em intercâmbio cultural.',efeito:'Custo: 0,3% do PIB · +aprovação',go:m=>{m.caixa-=m.pib*.003;m.aprovacao+=4;m.diplo+=4;m.legitimidade+=2;focus();},msg:'Festival conjunto anunciado'},
+      {l:'Enviar felicitações',t:'Gesto diplomático sem custo.',efeito:'+1 diplomacia',go:m=>{m.diplo+=1;},msg:'Felicitações enviadas'}],
     trade:[
       {l:'Entrar na rota comercial',t:'Negociar participação do seu país.',efeito:'−1 influência · chance de novo acordo',go:m=>{if(influence<1){showResourceWarning('influence',1,influence);return;}influence--;m.pib*=1.004;m.diplo+=3;focus();},msg:'País entrou na rota'},
       {l:'Financiar infraestrutura',t:'Investimento com retorno econômico.',efeito:'Custo: 0,8% do PIB',go:m=>{const cost=m.pib*.008;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','Projeto não foi financiado.','bad','results');return;}m.caixa-=cost;m.pib*=1.007;m.aprovacao+=2;focus();},msg:'Infraestrutura financiada'},
@@ -897,6 +909,7 @@ NATIONS.forEach(n=>{
 });
 
 function nationColor(n){
+  if(n._crisisUntil>Date.now())return n._crisisColor||'#fb4b64';
   if(PLAYER?.emGuerra&&(n===PLAYER||n===PLAYER.warTarget))return n===PLAYER?'#ff7a30':'#fb4b64';
   if(PLAYER&&n===PLAYER)return '#fbbf24';
   if(PLAYER?.aliados?.some(a=>a.nome===n.nome))return '#34d399';
@@ -1012,7 +1025,7 @@ function spawnWarUnits(a,b){
 function clearWarUnits(){mobileUnits=mobileUnits.filter(u=>u.scope!=='war');queueGlobeRefresh();}
 function updateWarUnits(now=performance.now()){
   if(document.hidden||now-unitFrame<PERF.unitInterval)return;
-  unitFrame=now;mobileUnits.forEach(moveUnit);lastHtmlSignature='';refreshGlobeLayers();
+  unitFrame=now;mobileUnits.forEach(u=>{if(!u.stationary)moveUnit(u);});lastHtmlSignature='';refreshGlobeLayers();
 }
 function focusNation(n,altitude=1.65){World.pointOfView({lat:n.lat,lng:n.lng,altitude},900);}
 function pulseImpact(n,rgb='251,75,100'){impactRings=[...impactRings.slice(-3),{lat:n.lat,lng:n.lng,rgb,radius:7,speed:4,repeat:700,_until:Date.now()+4200}];queueGlobeRefresh();setTimeout(()=>{impactRings=impactRings.filter(r=>!r._until||r._until>Date.now());queueGlobeRefresh();},4400);}
@@ -1906,18 +1919,53 @@ const MAP_EVENT_LIBRARY=[
   {kind:'trade',icon:'📈',title:'Corredor comercial',text:'Novas rotas movimentam mercados',color:'#34d399'},
   {kind:'military',icon:'🛰️',title:'Alerta militar',text:'Tropas se deslocam na fronteira',color:'#fb4b64'},
   {kind:'diplomacy',icon:'🤝',title:'Cúpula diplomática',text:'Líderes iniciam negociações',color:'#38bdf8'},
+  {kind:'famine',icon:'🌾',title:'Emergência alimentar',text:'A fome mobiliza uma resposta internacional',color:'#f59e0b'},
+  {kind:'disease',icon:'☣️',title:'Surto epidêmico',text:'Autoridades acompanham a propagação da doença',color:'#84cc16'},
+  {kind:'celebration',icon:'🎉',title:'Celebração nacional',text:'Uma conquista histórica leva multidões às ruas',color:'#f472b6'},
   {kind:'protest',icon:'📣',title:'Protestos nas ruas',text:'Pressão popular cresce rapidamente',color:'#fbbf24'},
   {kind:'aid',icon:'✚',title:'Ajuda humanitária',text:'Comboio internacional segue viagem',color:'#a78bfa'},
   {kind:'science',icon:'🧪',title:'Avanço científico',text:'Pesquisa estratégica ganha destaque',color:'#22d3ee'}
 ];
 let mapLiveEvents=[];
+function addEventMarker(ev,n,icon,offsetLat=0,offsetLng=0,size=1,color=ev.color){
+  mobileUnits.push({scope:'event',eventId:ev.id,kind:'event-'+ev.kind,stationary:true,icon,color,size,lat:n.lat+offsetLat,lng:n.lng+offsetLng,alt:.045});
+}
+function spawnMapEventVisual(ev){
+  const target=ev.kind==='military'?ev.b:ev.a,until=Date.now()+68000;
+  target._crisisUntil=until;target._crisisColor=ev.color;
+  if(ev.kind==='military'){
+    ev.a._crisisUntil=until;ev.a._crisisColor='#ff7a30';ev.b._crisisUntil=until;ev.b._crisisColor='#fb4b64';
+    for(let i=0;i<12;i++){const friendly=i<6;mobileUnits.push({scope:'event',eventId:ev.id,kind:i%3===0?'tank':'soldier',icon:i%3===0?'▰':i%4===0?'💥':'●',color:friendly?'#ff8a3d':'#ff365f',size:i%3===0?.9:.6,from:friendly?ev.a:ev.b,to:friendly?ev.b:ev.a,t:Math.random(),speed:.0008+Math.random()*.0006,baseAlt:.012,arcAlt:.012,lat:ev.a.lat,lng:ev.a.lng});}
+    for(let i=0;i<4;i++)ambientArcs.push({startLat:ev.a.lat+(Math.random()-.5)*2,startLng:ev.a.lng+(Math.random()-.5)*2,endLat:ev.b.lat+(Math.random()-.5)*2,endLng:ev.b.lng+(Math.random()-.5)*2,colors:['#ff7a30','#fb4b64'],altitude:.08+i*.018,stroke:.18,dashLength:.06,dashGap:.08,animate:650+i*120,type:'battle',_until:until});
+    impactRings.push({lat:ev.b.lat,lng:ev.b.lng,rgb:'251,54,95',radius:8,speed:5,repeat:420,_until:until});
+  }else if(ev.kind==='diplomacy'){
+    [['🧑‍💼',0,0],['👤',1.1,-1.2],['👤',-1.1,1.2],['👤',1.1,1.2],['🤝',-1.1,-1.2]].forEach(x=>addEventMarker(ev,target,x[0],x[1],x[2],.9));
+    impactRings.push({lat:target.lat,lng:target.lng,rgb:'56,189,248',radius:5,speed:1.2,repeat:1400,_until:until});
+  }else if(ev.kind==='famine'||ev.kind==='aid'){
+    [['⚠️',0,0],['🌾',1.2,-1],['🥣',-1.1,1],['✚',.8,1.2]].forEach(x=>addEventMarker(ev,target,x[0],x[1],x[2],.9));
+    impactRings.push({lat:target.lat,lng:target.lng,rgb:'245,158,11',radius:7,speed:1.5,repeat:1100,_until:until});
+  }else if(ev.kind==='disease'){
+    [['☣️',0,0],['●',1.8,-1.2],['●',-1.6,1.6],['●',2,1.8]].forEach((x,i)=>addEventMarker(ev,target,x[0],x[1],x[2],i?0.45:1.1,i?'#84cc16':'#d9f99d'));
+    impactRings.push({lat:target.lat,lng:target.lng,rgb:'132,204,22',radius:12,speed:.85,repeat:650,_until:until});
+  }else if(ev.kind==='protest'){
+    [['📣',0,0],['👥',1,-1],['👥',-1,1],['✊',1.2,1.1]].forEach(x=>addEventMarker(ev,target,x[0],x[1],x[2],.85));
+    impactRings.push({lat:target.lat,lng:target.lng,rgb:'251,191,36',radius:5,speed:2,repeat:800,_until:until});
+  }else{
+    const icons=ev.kind==='science'?['🧪','✨','🔬']:ev.kind==='trade'?['📈','🚢','💰']:['🎉','✨','🏆'];
+    icons.forEach((icon,i)=>addEventMarker(ev,target,icon,Math.sin(i*2.1)*1.3,Math.cos(i*2.1)*1.3,1));
+    impactRings.push({lat:target.lat,lng:target.lng,rgb:ev.kind==='science'?'34,211,238':'52,211,153',radius:6,speed:1.6,repeat:1200,_until:until});
+  }
+  setTimeout(()=>{mobileUnits=mobileUnits.filter(x=>x.eventId!==ev.id);ambientArcs=ambientArcs.filter(x=>x._until!==until);impactRings=impactRings.filter(x=>x._until!==until);queueGlobeRefresh();},69000);
+  queueGlobeRefresh();
+}
 function pushMapLiveEvent(silent=false){
   const tpl=pick(MAP_EVENT_LIBRARY),a=pick(NATIONS),b=pick(NATIONS.filter(n=>n!==a));
   const ev={...tpl,a,b,id:Date.now()+Math.random(),created:Date.now()};
-  mapLiveEvents.unshift(ev);mapLiveEvents=mapLiveEvents.slice(0,5);
+  mapLiveEvents.unshift(ev);mapLiveEvents=mapLiveEvents.slice(0,3);
   const isRoute=['trade','military','diplomacy','aid'].includes(ev.kind);
   if(isRoute){ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:[`${ev.color}18`,ev.color],altitude:ev.kind==='military'?.18:.12,stroke:ev.kind==='military'?.16:.1,dashLength:.12,dashGap:.18,animate:ev.kind==='military'?1500:3000,type:'live-'+ev.kind,_until:Date.now()+24000});}
   pulseImpact(ev.kind==='military'?b:a,ev.kind==='military'?'251,75,100':ev.kind==='protest'?'251,191,36':'56,189,248');
+  spawnMapEventVisual(ev);
   if(!silent&&PLAYER)addBulletin(ev.icon,ev.title,`${flag(a.nome)} ${a.nome}: ${ev.text.toLowerCase()}.`,ev.kind==='military'?'war':ev.kind==='protest'?'warn':'good','general');
   renderMapActivity();queueGlobeRefresh();
   setTimeout(()=>{ambientArcs=ambientArcs.filter(x=>!x._until||x._until>Date.now());queueGlobeRefresh();},24500);
@@ -1940,8 +1988,8 @@ function handleRail(name){
   if(name==='help'){showPopup('🧭','Central de comando','Use o menu lateral para abrir cada área. Os eventos do mapa podem ser clicados para investigar o país envolvido.',[{l:'Entendi',t:'Voltar ao jogo',go:()=>{},msg:'Ajuda fechada'}]);}
 }
 document.querySelectorAll('.railBtn[data-rail]').forEach(btn=>btn.addEventListener('click',()=>handleRail(btn.dataset.rail)));
-for(let i=0;i<3;i++)setTimeout(()=>pushMapLiveEvent(true),350+i*420);
-setInterval(()=>{if(!document.hidden)pushMapLiveEvent(false);},11500);
+for(let i=0;i<1;i++)setTimeout(()=>pushMapLiveEvent(true),900+i*420);
+setInterval(()=>{if(!document.hidden&&PLAYER)pushMapLiveEvent(false);},90000);
 
 
 /* ===== PATCH V8 — GERENCIADOR ÚNICO DE PAINÉIS ===== */
@@ -2271,5 +2319,14 @@ body.game-on #v11Tools{display:flex}
   :root{--desktop-action-h:190px}#actionRow{height:86px!important;min-height:86px!important}#actionRow .acard{height:80px!important;min-height:80px!important}
   #actionRow .actionReason,.actionVote{display:none!important}#worldTicker{bottom:206px!important}#groupBar{bottom:244px!important}#missionPanel{max-height:280px!important}#mapActivity{top:370px!important;bottom:214px!important}
 }
+</style>
+
+<style>
+/* ===== EVENTOS VIVOS NO GLOBO ===== */
+.moving-unit.event-diplomacy,.moving-unit.event-famine,.moving-unit.event-aid,.moving-unit.event-disease,.moving-unit.event-protest,.moving-unit.event-science,.moving-unit.event-trade,.moving-unit.event-celebration{padding:5px;border:1px solid currentColor;border-radius:50%;background:rgba(3,8,15,.88);box-shadow:0 0 18px color-mix(in srgb,currentColor 55%,transparent)}
+.moving-unit.event-disease span{animation:diseaseSpread 1.8s ease-in-out infinite}.moving-unit.event-celebration span,.moving-unit.event-science span{animation:eventSpark .75s ease-in-out infinite alternate}
+.moving-unit.tank{width:19px;height:13px;border:1px solid currentColor;border-radius:3px;background:rgba(20,5,5,.88);display:flex;align-items:center;justify-content:center}.moving-unit.soldier{width:13px;height:13px;border:1px solid currentColor;border-radius:50%;background:rgba(20,5,5,.9);display:flex;align-items:center;justify-content:center;font-size:8px!important}
+@keyframes diseaseSpread{50%{transform:scale(1.42);opacity:.62}}@keyframes eventSpark{to{transform:translateY(-5px) scale(1.2);filter:brightness(1.4)}}
+@media(max-width:820px){.moving-unit[class*="event-"]{padding:3px!important}.moving-unit.tank,.moving-unit.soldier{transform:scale(.82)}}
 </style>
 

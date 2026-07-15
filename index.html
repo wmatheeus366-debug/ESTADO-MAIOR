@@ -389,6 +389,21 @@ body{font-size:16px}
  #chapterBanner{top:132px}.introCard p{font-size:15px!important}#loreCard{font-size:14px}
 }
 
+
+
+/* ===== CONGRESSO, DECISÕES E ECONOMIA V4 ===== */
+#politicsToggle{position:fixed;left:218px;bottom:128px;z-index:15;border:1px solid rgba(167,139,250,.28);background:rgba(18,10,35,.88);color:#c4b5fd;border-radius:13px;padding:9px 12px;font:800 10px var(--mono);cursor:pointer;display:none}body.game-on #politicsToggle{display:block}
+#politicsPanel{position:fixed;left:88px;bottom:166px;width:330px;z-index:16;display:none;border:1px solid rgba(167,139,250,.24);border-radius:18px;background:rgba(5,9,18,.95);padding:15px;box-shadow:0 22px 70px rgba(0,0,0,.48);backdrop-filter:blur(16px)}#politicsPanel.on{display:block}
+.politicsHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.politicsHead strong{font:900 12px var(--mono);letter-spacing:.1em}.politicsHead button{border:0;background:rgba(255,255,255,.06);color:#aebbd0;border-radius:9px;width:29px;height:29px;cursor:pointer}
+.influenceBox{display:flex;justify-content:space-between;align-items:center;padding:11px 12px;border-radius:13px;background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(14,165,233,.08));margin-bottom:11px}.influenceBox span{font-size:12px;color:#b9c7da}.influenceBox b{font:900 24px var(--mono);color:#c4b5fd}.influenceBox small{display:block;font-size:9px;color:#71839b;margin-top:2px}
+.chamberBar{height:13px;display:flex;overflow:hidden;border-radius:999px;background:#0b1422;margin:8px 0 10px}.chamberBar i{height:100%;display:block}.seatGov{background:#34d399}.seatUnd{background:#fbbf24}.seatOpp{background:#fb4b64}.seatLegend{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.seatLegend div{padding:8px;border-radius:10px;background:rgba(255,255,255,.035);font-size:9px;color:#7f91aa}.seatLegend b{display:block;font:900 17px var(--mono);margin-top:3px}.seatLegend .g b{color:#34d399}.seatLegend .u b{color:#fbbf24}.seatLegend .o b{color:#fb7185}.politicsHint{margin-top:10px;padding:9px 10px;border-left:2px solid #a78bfa;background:rgba(167,139,250,.07);font-size:11px;line-height:1.45;color:#9eb0c5}
+#politicalBadge{display:flex;align-items:center;gap:6px;margin-left:7px;padding:5px 8px;border:1px solid rgba(167,139,250,.18);border-radius:9px;background:rgba(124,58,237,.08);font:800 10px var(--mono);white-space:nowrap}#politicalBadge b{color:#c4b5fd;font-size:14px}
+.feedTabs button{font-size:11px!important}.bitem[data-channel="results"]{border-left:3px solid rgba(56,189,248,.55)}.bitem.feed-hidden{display:none!important}
+.actionVote{display:block;margin-top:5px;font:800 8px var(--mono);letter-spacing:.05em;color:#c4b5fd}.actionVote.exec{color:#67e8f9}
+.moneyActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}.moneyBtn{border:1px solid rgba(52,211,153,.16);background:rgba(52,211,153,.06);color:#b9f4d8;border-radius:11px;padding:10px 8px;font:800 9px var(--mono);cursor:pointer;transition:.18s}.moneyBtn:hover{background:rgba(52,211,153,.13);transform:translateY(-2px)}.moneyBtn.danger{border-color:rgba(251,113,133,.2);background:rgba(251,113,133,.06);color:#fecdd3}
+.voteForecast{margin-top:12px;padding:12px;border-radius:14px;background:rgba(124,58,237,.09);border:1px solid rgba(167,139,250,.15)}.voteForecastTop{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#aab9cd}.voteForecastTop b{font:900 19px var(--mono);color:#c4b5fd}.voteTrack{height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-top:8px}.voteTrack i{display:block;height:100%;background:linear-gradient(90deg,#fb7185,#fbbf24,#34d399);border-radius:99px}.voteNote{font-size:10px;color:#8294aa;line-height:1.45;margin-top:8px}
+@media(max-width:820px){#politicsToggle{left:auto;right:10px;bottom:78px;padding:10px 12px}#politicsPanel{left:8px;right:8px;bottom:74px;width:auto;max-height:70dvh;overflow:auto;z-index:66;border-radius:22px}#politicalBadge{display:none}.moneyActions{grid-template-columns:1fr 1fr}}
+
 </style>
 
 <div id="app"></div>
@@ -421,6 +436,7 @@ body{font-size:16px}
   <div id="playerName">—</div>
   <div id="statRow"></div>
   <div id="cpBar"></div>
+  <div id="politicalBadge" title="Pontos de influência"><span>◆</span><b id="influenceTop">5</b><small>INFL.</small></div>
 </div>
 <div id="clockBox">
   <div id="dateStr">—</div>
@@ -434,7 +450,7 @@ body{font-size:16px}
 <aside id="feedShell" class="backdrop-blur-2xl">
   <div id="feedHead">
     <div><span class="liveDot"></span><strong>Radar global</strong><span class="verified">✓</span></div>
-    <div class="feedTabs"><button class="active">Para você</button><button>Inteligência</button></div>
+    <div class="feedTabs"><button class="active" data-feed="general">GERAL</button><button data-feed="results">RESULTADOS</button></div>
   </div>
   <div id="bulletin"></div>
   <div id="feedCompose"><span id="composeFlag">🌐</span><span>O que está acontecendo no mundo?</span><button>Publicar</button></div>
@@ -454,6 +470,23 @@ body{font-size:16px}
   <div class="financeNet"><span>Saldo anual projetado</span><b id="finNet">—</b></div>
   <div class="financeSection"><h4>ENTRADAS</h4><div id="finIncome"></div></div>
   <div class="financeSection"><h4>SAÍDAS</h4><div id="finExpense"></div></div>
+  <div class="financeSection"><h4>USAR O CAIXA</h4>
+    <div class="moneyActions">
+      <button class="moneyBtn" data-money="debt">AMORTIZAR DÍVIDA</button>
+      <button class="moneyBtn" data-money="reserve">RESERVA CAMBIAL</button>
+      <button class="moneyBtn" data-money="fund">FUNDO SOBERANO</button>
+      <button class="moneyBtn danger" data-money="stimulus">PACOTE EMERGENCIAL</button>
+    </div>
+  </div>
+</section>
+<button id="politicsToggle" title="Abrir Congresso">🏛️ CONGRESSO</button>
+<section id="politicsPanel">
+  <div class="politicsHead"><strong>CONGRESSO NACIONAL</strong><button id="politicsClose">✕</button></div>
+  <div class="influenceBox"><div><span>Pontos de influência</span><small>Use para negociar votos e destravar projetos</small></div><b id="influenceValue">5</b></div>
+  <div style="font-size:11px;color:#899bb3">Composição da Câmara · 513 cadeiras</div>
+  <div class="chamberBar"><i class="seatGov" id="seatGovBar"></i><i class="seatUnd" id="seatUndBar"></i><i class="seatOpp" id="seatOppBar"></i></div>
+  <div class="seatLegend"><div class="g">GOVERNO<b id="seatGov">—</b></div><div class="u">INDECISOS<b id="seatUnd">—</b></div><div class="o">OPOSIÇÃO<b id="seatOpp">—</b></div></div>
+  <div class="politicsHint" id="politicsHint">Projetos estruturais precisam de 257 votos. Emendas constitucionais exigem 308.</div>
 </section>
 <div id="chapterBanner"><small id="chapterKicker">CAPÍTULO</small><strong id="chapterTitle">—</strong><span id="chapterText">—</span></div>
 
@@ -582,7 +615,7 @@ NATIONS.forEach(n=>{n.vizinhos=NATIONS.filter(o=>o!==n).sort((a,b)=>distKm(n,a)-
 
 /* ===== ESTADO ===== */
 let PLAYER=null,dia=0,speed=1,playing=false,acc=0,selN=null;
-const DIAS=1460;let cp=2,CP_MAX=6,cpAcc=0;
+const DIAS=1460;let cp=2,CP_MAX=6,cpAcc=0;let influence=5,INFLUENCE_MAX=15;let activeFeed="general";
 const TAXAS=[{v:.10,l:'Mínima'},{v:.15,l:'Liberal'},{v:.20,l:'Equilibrada'},{v:.27,l:'Pesada'},{v:.34,l:'Confisco'}];
 let taxIdx=2;const GASTO=.188,JURO=.055;const CD={};let efeitos=[],prevStats={},avisos={div:false,caixa:false};
 let prox=22+Math.floor(Math.random()*10),escTimer=70+Math.floor(Math.random()*60),opTimer=90+Math.floor(Math.random()*50);
@@ -826,7 +859,7 @@ function processarFilaIA(){
 /* ===== RITMO, OBJETIVOS E EVENTOS MUNDIAIS ===== */
 let worldTension=28,actionCombo=0,lastActionDay=-99,comboTimer=null,nextWorldEvent=18;
 const objectives=[
-  {id:'approval',label:'Atingir 60% de aprovação',reward:'+1 CP',done:false,check:n=>n.aprovacao>=60,grant:n=>{cp=Math.min(CP_MAX,cp+1);}},
+  {id:'approval',label:'Atingir 60% de aprovação',reward:'+1 CP',done:false,check:n=>n.aprovacao>=60,grant:n=>{cp=Math.min(CP_MAX,cp+1);influence=Math.min(INFLUENCE_MAX,influence+1);}},
   {id:'economy',label:'Crescer o PIB em 5%',reward:'Caixa +1% PIB',done:false,check:n=>n.pib>=n.pib0*1.05,grant:n=>{n.caixa+=n.pib*.01;}},
   {id:'diplo',label:'Firmar uma aliança ou acordo',reward:'Diplomacia +6',done:false,check:n=>n.aliados.length+n.acordos.length>0,grant:n=>{n.diplo+=6;}},
   {id:'science',label:'Levar ciência a 70',reward:'PIB +1.5%',done:false,check:n=>n.ciencia>=70,grant:n=>{n.pib*=1.015;}},
@@ -860,46 +893,96 @@ setInterval(()=>{if(document.hidden)return;const now=new Date();const val=new In
 
 /* ===== AÇÕES ===== */
 const ACOES=[
-  {id:'saude',ico:'🏥',t:'Saúde',cp:1,c:.014,cd:60,grupos:{sau:12,sind:6},go:n=>{n.saude+=10;n.aprovacao+=3;},msg:'Hospitais entregues'},
-  {id:'ciencia',ico:'🔬',t:'Pesquisa',cp:1,c:.012,cd:55,grupos:{uni:12},go:n=>{n.ciencia+=10;n.aprovacao-=1;},msg:'Verba para universidades'},
-  {id:'social',ico:'🏘️',t:'Social',cp:2,c:.030,cd:90,grupos:{sind:14,emp:-8},go:n=>{n.aprovacao+=12;n.estabilidade+=5;},msg:'Programa social lançado'},
-  {id:'infra',ico:'🏗️',t:'Obras',cp:2,c:.035,cd:120,grupos:{emp:10,sind:6},go:n=>{n.pib*=1.04;n.aprovacao+=5;},msg:'Infraestrutura expandida'},
-  {id:'militar',ico:'🛡️',t:'Armamento',cp:1,c:.022,cd:75,grupos:{mil:14,sind:-6},go:n=>{n.mil+=12+(n._milBonus||0);n.aprovacao-=5;},msg:'Forças reforçadas'},
+  {id:'saude',ico:'🏥',t:'Saúde',cp:1,legislative:true,threshold:257,complexity:8,c:.014,cd:60,grupos:{sau:12,sind:6},go:n=>{n.saude+=10;n.aprovacao+=3;},msg:'Hospitais entregues'},
+  {id:'ciencia',ico:'🔬',t:'Pesquisa',cp:1,legislative:true,threshold:257,complexity:10,c:.012,cd:55,grupos:{uni:12},go:n=>{n.ciencia+=10;n.aprovacao-=1;},msg:'Verba para universidades'},
+  {id:'social',ico:'🏘️',t:'Social',cp:2,legislative:true,threshold:257,complexity:16,c:.030,cd:90,grupos:{sind:14,emp:-8},go:n=>{n.aprovacao+=12;n.estabilidade+=5;},msg:'Programa social lançado'},
+  {id:'infra',ico:'🏗️',t:'Obras',cp:2,legislative:true,threshold:257,complexity:14,c:.035,cd:120,grupos:{emp:10,sind:6},go:n=>{n.pib*=1.04;n.aprovacao+=5;},msg:'Infraestrutura expandida'},
+  {id:'militar',ico:'🛡️',t:'Armamento',cp:1,legislative:true,threshold:257,complexity:13,c:.022,cd:75,grupos:{mil:14,sind:-6},go:n=>{n.mil+=12+(n._milBonus||0);n.aprovacao-=5;},msg:'Forças reforçadas'},
   {id:'diplo',ico:'🤝',t:'Diplomacia',cp:1,c:.008,cd:60,grupos:{emp:6,uni:4},go:n=>{n.diplo+=11+(n._cultBonus||0);n.aprovacao+=2;},msg:'Acordos diplomáticos'},
-  {id:'anticorr',ico:'🔍',t:'Anticorrupção',cp:3,c:.010,cd:150,grupos:{uni:10,sind:8,emp:-4},go:n=>{n.legitimidade+=16;n.estabilidade+=8;n.aprovacao+=5;},msg:'Operação anticorrupção'},
+  {id:'anticorr',ico:'🔍',t:'Anticorrupção',cp:3,legislative:true,threshold:308,complexity:24,c:.010,cd:150,grupos:{uni:10,sind:8,emp:-4},go:n=>{n.legitimidade+=16;n.estabilidade+=8;n.aprovacao+=5;},msg:'Operação anticorrupção'},
   {id:'propag',ico:'📺',t:'Propaganda',cp:1,c:.006,cd:45,grupos:{mil:4,uni:-8},go:n=>{n.aprovacao+=10;n.legitimidade-=8;efeitos.push({dias:110,f:m=>{m.aprovacao-=.09;}});},msg:'Campanha nacional'},
-  {id:'austeridade',ico:'✂️',t:'Austeridade',cp:2,c:-.030,cd:120,grupos:{emp:10,sind:-14},go:n=>{n.aprovacao-=12;n.estabilidade-=7;n.saude-=4;},msg:'Pacote de cortes'},
+  {id:'austeridade',ico:'✂️',t:'Austeridade',cp:2,legislative:true,threshold:257,complexity:19,c:-.030,cd:120,grupos:{emp:10,sind:-14},go:n=>{n.aprovacao-=12;n.estabilidade-=7;n.saude-=4;},msg:'Pacote de cortes'},
   {id:'reforco',ico:'🪖',t:'Reforço',cp:1,c:.018,cd:30,grupos:{mil:8},go:n=>{if(n.emGuerra)n.warStrength=clamp(n.warStrength+18,0,100);n.mil+=3;},msg:'Tropas reforçadas'},
-  {id:'excecao',ico:'🚨',t:'Exceção',cp:3,c:.014,cd:200,grupos:{mil:16,uni:-18},go:n=>{n.estabilidade+=28;if(!n._excecaoFree)n.legitimidade-=25;n.aprovacao-=8;n.diplo-=10;},msg:'Estado de exceção'},
-  {id:'educacao',ico:'🎓',t:'Educação',cp:1,c:.013,cd:65,grupos:{uni:14,sind:4},go:n=>{n.ciencia+=7;n.legitimidade+=3;n.aprovacao+=2;efeitos.push({dias:240,f:m=>{m.pib*=1.000025;}});},msg:'Plano nacional de educação'},
-  {id:'industria',ico:'🏭',t:'Indústria',cp:2,c:.028,cd:100,grupos:{emp:12,sind:5},go:n=>{n.pib*=1.025;n.caixa+=n.pib*.004;n.estabilidade+=2;},msg:'Programa de reindustrialização'},
-  {id:'energia',ico:'⚡',t:'Energia',cp:2,c:.025,cd:110,grupos:{emp:8,uni:6},go:n=>{n.pib*=1.018;n.ciencia+=4;n.aprovacao+=2;},msg:'Matriz energética modernizada'},
+  {id:'excecao',ico:'🚨',t:'Exceção',cp:3,legislative:true,threshold:308,complexity:28,c:.014,cd:200,grupos:{mil:16,uni:-18},go:n=>{n.estabilidade+=28;if(!n._excecaoFree)n.legitimidade-=25;n.aprovacao-=8;n.diplo-=10;},msg:'Estado de exceção'},
+  {id:'educacao',ico:'🎓',t:'Educação',cp:1,legislative:true,threshold:257,complexity:10,c:.013,cd:65,grupos:{uni:14,sind:4},go:n=>{n.ciencia+=7;n.legitimidade+=3;n.aprovacao+=2;efeitos.push({dias:240,f:m=>{m.pib*=1.000025;}});},msg:'Plano nacional de educação'},
+  {id:'industria',ico:'🏭',t:'Indústria',cp:2,legislative:true,threshold:257,complexity:16,c:.028,cd:100,grupos:{emp:12,sind:5},go:n=>{n.pib*=1.025;n.caixa+=n.pib*.004;n.estabilidade+=2;},msg:'Programa de reindustrialização'},
+  {id:'energia',ico:'⚡',t:'Energia',cp:2,legislative:true,threshold:257,complexity:15,c:.025,cd:110,grupos:{emp:8,uni:6},go:n=>{n.pib*=1.018;n.ciencia+=4;n.aprovacao+=2;},msg:'Matriz energética modernizada'},
   {id:'seguranca',ico:'🚓',t:'Segurança',cp:1,c:.011,cd:55,grupos:{mil:7,sind:-2},go:n=>{n.estabilidade+=10;n.aprovacao+=3;n.legitimidade-=1;},msg:'Operação nacional de segurança'},
-  {id:'habitacao',ico:'🏠',t:'Habitação',cp:2,c:.024,cd:95,grupos:{sind:12,emp:3},go:n=>{n.aprovacao+=9;n.estabilidade+=4;n.pib*=1.008;},msg:'Novas moradias entregues'},
+  {id:'habitacao',ico:'🏠',t:'Habitação',cp:2,legislative:true,threshold:257,complexity:14,c:.024,cd:95,grupos:{sind:12,emp:3},go:n=>{n.aprovacao+=9;n.estabilidade+=4;n.pib*=1.008;},msg:'Novas moradias entregues'},
   {id:'comercio',ico:'🚢',t:'Exportações',cp:1,c:.007,cd:50,grupos:{emp:9},go:n=>{n.caixa+=n.pib*.012;n.pib*=1.009;n.diplo+=3;},msg:'Missão comercial bem-sucedida'},
   {id:'inteligencia',ico:'🛰️',t:'Inteligência',cp:1,c:.009,cd:70,grupos:{mil:8,uni:4},go:n=>{n.mil+=5;n.estabilidade+=3;n.diplo+=2;worldTension=Math.max(0,worldTension-2);},msg:'Rede de inteligência ampliada'},
   {id:'cultura',ico:'🎭',t:'Cultura',cp:1,c:.006,cd:45,grupos:{uni:7,sind:6},go:n=>{n.aprovacao+=6;n.legitimidade+=4;n.diplo+=2;},msg:'Circuito cultural nacional'},
-  {id:'verde',ico:'🌱',t:'Transição Verde',cp:2,c:.019,cd:90,grupos:{uni:10,emp:-3},go:n=>{n.ciencia+=6;n.diplo+=5;n.pib*=1.011;n.aprovacao+=2;},msg:'Pacto climático lançado'},
+  {id:'verde',ico:'🌱',t:'Transição Verde',cp:2,legislative:true,threshold:257,complexity:17,c:.019,cd:90,grupos:{uni:10,emp:-3},go:n=>{n.ciencia+=6;n.diplo+=5;n.pib*=1.011;n.aprovacao+=2;},msg:'Pacto climático lançado'},
   {id:'reserva',ico:'🏦',t:'Fundo Reserva',cp:1,c:.020,cd:80,grupos:{emp:5},go:n=>{n.caixa+=n.pib*.006;n.estabilidade+=5;efeitos.push({dias:150,f:m=>{m.aprovacao+=.008;}});},msg:'Reserva anticrise criada'},
+  {id:'ferrovias',ico:'🚄',t:'Ferrovias',cp:2,legislative:true,threshold:257,complexity:18,c:.042,cd:150,grupos:{emp:9,sind:8},go:n=>{n.pib*=1.045;n.estabilidade+=4;n.caixa+=n.pib*.003;},msg:'Malha ferroviária expandida'},
+  {id:'digital',ico:'💻',t:'Governo Digital',cp:1,legislative:true,threshold:257,complexity:9,c:.012,cd:80,grupos:{uni:10,emp:5},go:n=>{n.ciencia+=8;n.corrupcao-=7;n.legitimidade+=5;},msg:'Serviços públicos digitalizados'},
+  {id:'renda',ico:'💳',t:'Renda Cidadã',cp:2,legislative:true,threshold:257,complexity:20,c:.038,cd:110,grupos:{sind:16,emp:-10},go:n=>{n.aprovacao+=14;n.estabilidade+=6;efeitos.push({dias:180,f:m=>{m.caixa-=m.pib*.00003;}});},msg:'Programa de renda aprovado'},
+  {id:'privatiza',ico:'📑',t:'Privatizações',cp:2,legislative:true,threshold:257,complexity:22,c:-.045,cd:140,grupos:{emp:16,sind:-18,uni:-5},go:n=>{n.caixa+=n.pib*.035;n.aprovacao-=8;n.estabilidade-=4;n.pib*=1.012;},msg:'Pacote de privatizações concluído'},
+  {id:'moeda',ico:'💱',t:'Defender Moeda',cp:1,c:.018,cd:55,grupos:{emp:6},go:n=>{n.estabilidade+=7;n.legitimidade+=2;n.caixa-=n.pib*.004;},msg:'Banco Central intervém no câmbio'},
+  {id:'turismo',ico:'🧳',t:'Turismo',cp:1,c:.010,cd:65,grupos:{emp:7,uni:3},go:n=>{n.caixa+=n.pib*.009;n.pib*=1.006;n.diplo+=3;n.aprovacao+=2;},msg:'Campanha internacional de turismo'},
+  {id:'espacial',ico:'🚀',t:'Programa Espacial',cp:3,legislative:true,threshold:257,complexity:23,c:.050,cd:210,grupos:{uni:18,mil:8,emp:4},go:n=>{n.ciencia+=18;n.diplo+=8;n.mil+=5;n.aprovacao+=4;},msg:'Programa espacial nacional lançado'},
 ];
 const cpCusto=a=>Math.max(1,a.cp+(PLAYER?PLAYER._dCp||0:0));
 const podeUsar=a=>{if(!PLAYER)return false;const n=PLAYER,custo=a.c*n.pib,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
   if(a.id==='reforco'&&!n.emGuerra)return false;
   return (freeSci||cp>=cpCusto(a))&&(custo<=0||n.caixa>=custo)&&!(CD[a.id]>dia);};
 
-async function usar(a){
-  if(!PLAYER||!podeUsar(a))return;const n=PLAYER;
-  const freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
+function chamberSeats(){
+  if(!PLAYER)return {gov:0,und:0,opp:0};
+  const total=513;
+  let gov=Math.round(total*clamp(PLAYER.congresso,10,90)/100);
+  let opp=Math.round(total*clamp(PLAYER.oposicao,5,75)/100);
+  if(gov+opp>total-15)opp=Math.max(0,total-gov-15);
+  return {gov,opp,und:Math.max(0,total-gov-opp)};
+}
+function voteForecast(a,boost=0){
+  const seats=chamberSeats(),n=PLAYER;
+  const groupMood=((n.grupos.emp+n.grupos.sind+n.grupos.uni+n.grupos.sau+n.grupos.mil)/5-50)*.35;
+  const political=(n.aprovacao-50)*.55+(n.legitimidade-50)*.35+groupMood-(a.complexity||10)+boost;
+  const swing=Math.round(seats.und*clamp(.5+political/100,.08,.92));
+  const expected=clamp(seats.gov+swing,0,513);
+  const chance=clamp(50+(expected-(a.threshold||257))*1.25,5,95);
+  return {expected:Math.round(expected),chance:Math.round(chance),needed:a.threshold||257,seats};
+}
+function executeAction(a){
+  const n=PLAYER,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
   if(!freeSci)cp-=cpCusto(a);n.caixa-=a.c*n.pib;a.go(n);
   if(a.grupos)Object.entries(a.grupos).forEach(([k,v])=>{if(n.grupos[k]!==undefined)n.grupos[k]=clamp(n.grupos[k]+v,0,100);});
   clampAll();CD[a.id]=dia+a.cd;registerAction(a.t);refresh();updateMetaHud();
-  // Narrativa IA para a ação
+  addBulletin(a.ico,`${a.t} aprovado`,a.msg,'act','results');
   gerarNarrativaAcao(a);
+}
+function attemptVote(a,boost=0,spent=0){
+  const f=voteForecast(a,boost),roll=Math.random()*100;
+  if(spent)influence=Math.max(0,influence-spent);
+  if(roll<=f.chance){
+    const margin=Math.max(1,Math.round((f.chance-roll)/4));
+    PLAYER.congresso+=1.2;PLAYER.oposicao-=.6;
+    addBulletin('✅',`Projeto aprovado: ${a.t}`,`A Câmara aprovou por uma margem política de ${margin} pontos. O governo executará a medida.`,'good','results');
+    executeAction(a);
+  }else{
+    cp=Math.max(0,cp-1);PLAYER.aprovacao-=2;PLAYER.legitimidade-=1.5;PLAYER.oposicao+=2.5;PLAYER.congresso-=1.3;CD[a.id]=dia+Math.max(20,Math.round(a.cd*.35));
+    addBulletin('❌',`Projeto rejeitado: ${a.t}`,`A oposição e deputados indecisos barraram a proposta. Você perdeu 1 ponto de ação.`,'bad','results');
+    headline('CONGRESSO DERROTA O GOVERNO');clampAll();refresh();updateMetaHud();
+  }
+  $('popup').classList.remove('on');speed=1;
+}
+async function usar(a){
+  if(!PLAYER||!podeUsar(a))return;
+  if(!a.legislative){executeAction(a);return;}
+  const f=voteForecast(a);
+  const pct=f.chance,need=f.needed;
+  showPopup('🏛️',`VOTAÇÃO — ${a.t}`,`Este projeto precisa de ${need} votos. Sua base tem ${f.seats.gov} deputados; ${f.seats.und} estão indecisos e ${f.seats.opp} são oposição.<div class="voteForecast"><div class="voteForecastTop"><span>Chance de aprovação</span><b>${pct}%</b></div><div class="voteTrack"><i style="width:${pct}%"></i></div><div class="voteNote">Previsão: cerca de ${f.expected} votos. Negociar aumenta a chance, mas consome influência.</div></div>`,[
+    {l:'Levar ao plenário',t:'Votar agora com a coalizão atual.',efeito:`Chance estimada: ${pct}%`,go:()=>attemptVote(a,0,0),msg:'Votação iniciada'},
+    {l:'Negociar apoio — 2 influência',t:'Liberar emendas e negociar com indecisos.',efeito:`Nova chance aproximada: ${voteForecast(a,18).chance}%`,go:()=>{if(influence<2){addBulletin('⚠️','Influência insuficiente','Você precisa de 2 pontos de influência.','warn','results');return;}attemptVote(a,18,2);},msg:'Apoio negociado'},
+    {l:'Grande articulação — 4 influência',t:'Mobilizar líderes partidários e aliados.',efeito:`Nova chance aproximada: ${voteForecast(a,34).chance}%`,go:()=>{if(influence<4){addBulletin('⚠️','Influência insuficiente','Você precisa de 4 pontos de influência.','warn','results');return;}attemptVote(a,34,4);},msg:'Coalizão mobilizada'},
+    {l:'Retirar projeto',t:'Evita uma derrota pública.',efeito:'Sem custo, sem efeito',go:()=>{},msg:'Projeto retirado'}
+  ]);
 }
 
 /* ===== BOLETIM ===== */
-function addBulletin(ico,titulo,texto,tipo){
-  const el=document.createElement('article');el.className='bitem '+tipo;
+function addBulletin(ico,titulo,texto,tipo,channel){
+  const el=document.createElement('article');el.className='bitem '+tipo;channel=channel||(tipo==='act'?'results':'general');el.dataset.channel=channel;if(activeFeed!==channel)el.classList.add('feed-hidden');
   const mesAtual=Math.floor(dia/30)+1,handles={war:'@defesa_global',bad:'@alerta_estado',good:'@progresso',warn:'@radar_politico',act:'@palacio',"ai-event":'@central_intel'};
   const handle=handles[tipo]||'@estado_maior',likes=Math.floor(8+Math.random()*240),reposts=Math.floor(2+Math.random()*70);
   el.innerHTML=`<div class="bico">${ico}</div><div class="btxt"><div><strong>${titulo}</strong><span class="verified">✓</span> <span class="bhandle">${handle}</span></div><span class="bcopy">${texto}</span><span class="btime">Mês ${mesAtual} · Dia ${dia} · agora</span><div class="bactions"><button title="Responder">◯ ${Math.floor(Math.random()*18)}</button><button title="Republicar">↻ ${reposts}</button><button class="likeBtn" title="Curtir">♡ ${likes}</button><button title="Compartilhar">⌁</button></div></div>`;
@@ -922,6 +1005,24 @@ const STAT_DEF=[
   {k:'mil',l:'Militar',i:'🛡️',c:v=>v<30?'var(--rose)':'var(--teal)'},
   {k:'diplo',l:'Diplo.',i:'🤝',c:v=>v<30?'var(--rose)':'var(--teal)'},
 ];
+function updatePoliticsHud(){
+  if(!PLAYER)return;const st=chamberSeats();
+  const map={seatGov:st.gov,seatUnd:st.und,seatOpp:st.opp,influenceValue:influence,influenceTop:influence};
+  Object.entries(map).forEach(([id,v])=>{const e=$(id);if(e)e.textContent=v;});
+  const total=513;$('seatGovBar').style.width=(st.gov/total*100)+'%';$('seatUndBar').style.width=(st.und/total*100)+'%';$('seatOppBar').style.width=(st.opp/total*100)+'%';
+  $('politicsHint').textContent=st.gov>=308?'Você controla uma supermaioria. Até reformas constitucionais têm boa chance.':st.gov>=257?'Você possui maioria simples, mas emendas constitucionais exigirão negociação.':st.gov>=220?'Governo minoritário: deputados indecisos decidirão quase todas as votações.':'Sua base está fraca. Derrotas legislativas e impeachment são riscos reais.';
+}
+function useTreasury(kind){
+  if(!PLAYER)return;const n=PLAYER;
+  const actions={
+    debt:{cost:n.pib*.05,label:'Amortização da dívida',go:()=>{n.divida=Math.max(0,n.divida-n.pib*.05);n.legitimidade+=3;n.grupos.emp+=4;}},
+    reserve:{cost:n.pib*.025,label:'Compra de reservas cambiais',go:()=>{n.estabilidade+=7;n.diplo+=2;efeitos.push({dias:180,f:m=>{m.estabilidade+=.005;}});}},
+    fund:{cost:n.pib*.035,label:'Aporte no fundo soberano',go:()=>{n.caixa+=n.pib*.006;efeitos.push({dias:300,f:m=>{m.caixa+=m.pib*.000018;}});n.legitimidade+=2;}},
+    stimulus:{cost:n.pib*.04,label:'Pacote emergencial',go:()=>{n.aprovacao+=9;n.estabilidade+=5;n.pib*=1.012;n.grupos.sind+=8;}}
+  };const a=actions[kind];if(!a)return;
+  if(n.caixa<a.cost){addBulletin('💸','Caixa insuficiente',`São necessários ${money(a.cost)} para ${a.label.toLowerCase()}.`,'warn','results');return;}
+  n.caixa-=a.cost;a.go();clampAll();addBulletin('💰',a.label,`${money(a.cost)} foram direcionados pelo Tesouro. A medida já produz efeitos.`,'act','results');refresh();
+}
 function financeBreakdown(){
   if(!PLAYER)return {income:[],expense:[],net:0};const n=PLAYER,tx=TAXAS[taxIdx].v;
   const income=[['Impostos',n.pib*tx],['Acordos comerciais',n.acordos.reduce((s,ac)=>s+n.pib*ac.bonus,0)],['Colônias e territórios',n.colonias.reduce((s,c)=>s+c.dreno*12,0)]];
@@ -938,6 +1039,7 @@ function refresh(){
     return `<div class="sc"><span class="si">${i}</span><div><span class="sv" style="color:${c(v)}">${v}</span><span class="sl">${l}</span></div>${tr}</div>`;}).join('');
   STAT_DEF.forEach(({k})=>{prevStats[k]=Math.round(n[k]);});
   $('cpBar').innerHTML=Array.from({length:CP_MAX},(_,i)=>`<div class="pip ${i<cp?'on':''}"></div>`).join('');
+  updatePoliticsHud();
   const f=fluxoAnual();updateFinancePanel();
   $('eCash').textContent=money(n.caixa);$('eCash').style.color=n.caixa<0?'var(--rose)':'var(--bone)';
   $('eFlow').textContent=(f>=0?'+':'')+money(f);$('eFlow').style.color=f>=0?'var(--teal)':'var(--rose)';
@@ -947,7 +1049,7 @@ function refresh(){
     $(`g_${k}`).style.width=v+'%';$(`g_${k}`).style.background=c;$(`gv_${k}`).textContent=v;});
   const af=ACOES.filter(a=>a.id!=='reforco'||n.emGuerra);
   $('actionRow').innerHTML=af.map(a=>{const off=!podeUsar(a),cdL=(CD[a.id]||0)-dia,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude'),custo=a.c*n.pib;
-    return `<button class="acard ${off?'off':''}" data-a="${a.id}" ${off?'disabled':''}><div class="ai">${a.ico}</div><div class="at">${a.t}</div><div class="ac">${freeSci?'0':cpCusto(a)} CP</div><div class="am">${custo<0?'+':''}${money(Math.abs(custo))}</div>${cdL>0?`<div class="cblk">${cdL}d</div>`:''}</button>`;}).join('');
+    return `<button class="acard ${off?'off':''}" data-a="${a.id}" ${off?'disabled':''}><div class="ai">${a.ico}</div><div class="at">${a.t}</div><div class="ac">${freeSci?'0':cpCusto(a)} CP</div><div class="am">${custo<0?'+':''}${money(Math.abs(custo))}</div><span class="actionVote ${a.legislative?'':'exec'}">${a.legislative?'🏛 VOTAÇÃO':'⚡ EXECUTIVO'}</span>${cdL>0?`<div class="cblk">${cdL}d</div>`:''}</button>`;}).join('');
   $('actionRow').querySelectorAll('.acard').forEach(b=>{b.onclick=()=>{const a=ACOES.find(x=>x.id===b.dataset.a);if(a)usar(a);};});
   // ---- PAINEL RELAÇÕES ----
   let relHtml='';
@@ -1248,7 +1350,7 @@ function tickGuerra(){if(!PLAYER)return;const n=PLAYER,t=n.warTarget;if(!t)retur
 /* ===== POPUP ===== */
 function showPopup(ico,title,desc,choices){
   speed=0;document.querySelectorAll('.spd button').forEach(b=>{b.classList.remove('act');if(b.dataset.s==='0')b.classList.add('act');});
-  $('pIco').textContent=ico;$('pTitle').textContent=title;$('pDesc').textContent=desc;
+  $('pIco').textContent=ico;$('pTitle').textContent=title;if(String(desc).includes('voteForecast'))$('pDesc').innerHTML=desc;else $('pDesc').textContent=desc;
   $('pChoices').innerHTML=choices.map((c,i)=>`<button class="popt ${c.war?'war-opt':''}" data-i="${i}"><span class="pl">${c.l}</span>${c.t||''}<span class="pe">${c.efeito||''}</span></button>`).join('');
   $('pChoices').querySelectorAll('.popt').forEach(b=>{b.onclick=()=>{const c=choices[+b.dataset.i];if(PLAYER)c.go(PLAYER);clampAll();
     addBulletin('📋','Sua decisão',c.msg||c.l,'act');refresh();$('popup').classList.remove('on');
@@ -1271,6 +1373,25 @@ function governmentPulse(){if(!PLAYER)return;const n=PLAYER,positives=[];
  if(n.pib>n.pib0*1.03)positives.push(['📈','Economia acelera',`O PIB acumula crescimento de ${((n.pib/n.pib0-1)*100).toFixed(1)}%.`]);
  if(positives.length&&Math.random()<.7){const e=pick(positives);addBulletin(e[0],e[1],e[2],'good');n.aprovacao+=.6;n.legitimidade+=.35;}}
 
+function gerarDecisaoPolitica(){
+  if(!PLAYER)return;const n=PLAYER;
+  const pool=[
+    {ico:'⚖️',title:'Reforma da Previdência',desc:'O déficit cresce, mas sindicatos prometem paralisação nacional.',choices:[
+      {l:'Enviar reforma ampla',t:'Melhora as contas, enfrenta resistência.',go:m=>{m.divida*=.96;m.grupos.emp+=8;m.grupos.sind-=15;m.aprovacao-=5;m.congresso-=2;influence+=1;},msg:'Reforma ampla enviada'},
+      {l:'Acordo moderado',t:'Economia menor e desgaste controlado.',go:m=>{m.divida*=.98;m.grupos.sind-=5;m.legitimidade+=3;},msg:'Texto moderado aprovado'},
+      {l:'Adiar debate',t:'Evita crise agora, agrava o futuro.',go:m=>{m.aprovacao+=2;m.divida*=1.02;m.oposicao+=3;},msg:'Reforma adiada'}]},
+    {ico:'🛢️',title:'Choque no preço da energia',desc:'Empresas pedem subsídio enquanto o Tesouro alerta para o custo.',choices:[
+      {l:'Subsidiar preços',t:'Protege famílias e empresas.',go:m=>{m.caixa-=m.pib*.018;m.aprovacao+=7;m.estabilidade+=4;},msg:'Subsídio emergencial criado'},
+      {l:'Liberar preços',t:'Poupa caixa, provoca inflação e protestos.',go:m=>{m.caixa+=m.pib*.004;m.aprovacao-=7;m.grupos.emp+=5;m.grupos.sind-=8;},msg:'Preços foram liberados'},
+      {l:'Investir em energia pública',t:'Caro agora, forte no longo prazo.',go:m=>{m.caixa-=m.pib*.03;m.pib*=1.018;m.ciencia+=5;m.aprovacao+=2;},msg:'Plano energético iniciado'}]},
+    {ico:'🕵️',title:'Dossiê contra um aliado',desc:'A inteligência encontrou corrupção em um partido essencial à coalizão.',choices:[
+      {l:'Autorizar investigação',t:'Fortalece instituições, arrisca votos.',go:m=>{m.legitimidade+=10;m.congresso-=6;m.oposicao+=2;m.corrupcao-=8;},msg:'Investigação autorizada'},
+      {l:'Negociar saída silenciosa',t:'Preserva a base, custa influência.',go:m=>{if(influence>0)influence--;m.congresso+=2;m.legitimidade-=3;},msg:'Crise abafada por acordo'},
+      {l:'Arquivar o dossiê',t:'Coalizão agradece, imprensa reage.',go:m=>{m.congresso+=5;m.legitimidade-=10;m.aprovacao-=4;m.corrupcao+=6;},msg:'Dossiê arquivado'}]}
+  ];const e=pick(pool);
+  showPopup(e.ico,e.title,e.desc,e.choices.map(c=>({...c,efeito:'Decisão de alto impacto',go:m=>{c.go(m);addBulletin(e.ico,e.title,c.msg,'act','results');}})));
+}
+
 /* ===== TICK ===== */
 function tick(dt){
   if(!playing||speed===0||!PLAYER)return;acc+=dt*speed*1.15;
@@ -1281,8 +1402,8 @@ function tick(dt){
     if(n.caixa<0){n.divida+=Math.abs(n.caixa);n.caixa=0;if(!avisos.caixa){addBulletin('🔴','Cofre zerado','Governo rola dívida','bad');avisos.caixa=true;}}else avisos.caixa=false;
     n.pib*=1+(.00014-Math.max(0,tx-.20)*.55*(0.0004)-(55-n.estabilidade)/2800+(n.ciencia/100)*.00013);
     n.divida*=1+(JURO/365)*(n._debtMult||1)*.15;
-    n.aprovacao-=.032;if(n.divida/n.pib>1.2)n.aprovacao-=.018;
-    n.estabilidade+=(n.aprovacao>55?.022:-.026)+(n.legitimidade>65?.008:-.014);
+    n.aprovacao-=.045;if(n.divida/n.pib>1.0)n.aprovacao-=.024;if(tx>.27)n.aprovacao-=.012;
+    n.estabilidade+=(n.aprovacao>58?.018:-.034)+(n.legitimidade>68?.006:-.018);
     n.legitimidade-=(n._legitDrain||.01);n.congresso+=(n.aprovacao>50?.005:-.008);n.oposicao+=(n.aprovacao<50?.012:-.005);
     n.grupos.emp+=(tx<.18?.008:tx>.28?-.008:0);n.grupos.sind+=(n.aprovacao>55?.005:-.005);
     efeitos.forEach(e=>{e.f(n);e.dias--;});efeitos=efeitos.filter(e=>e.dias>0);
@@ -1341,7 +1462,8 @@ function tick(dt){
       n.pib*=1+(n.territorios*.00005);// pequeno boost diário
       n.mil=clamp(n.mil+(n.territorios*.002),0,100);
     }
-    cpAcc+=1/10;if(cpAcc>=1&&cp<CP_MAX){cp++;cpAcc=0;}else if(cpAcc>=1)cpAcc=1;
+    cpAcc+=1/14;if(cpAcc>=1&&cp<CP_MAX){cp++;cpAcc=0;}else if(cpAcc>=1)cpAcc=1;
+    if(dia%60===0&&influence<INFLUENCE_MAX){const gain=(n.aprovacao>55&&n.legitimidade>55)?2:1;influence=Math.min(INFLUENCE_MAX,influence+gain);addBulletin('◆','Capital político renovado',`Líderes aliados renderam +${gain} ponto${gain>1?'s':''} de influência.`,'good','results');}
     if(n.emGuerra)tickGuerra();
     if(dia>=nextWorldEvent){gerarEventoMundo();nextWorldEvent=dia+32+Math.floor(Math.random()*42);}
     if(dia%30===0){worldTension=clamp(worldTension+(n.emGuerra?2:-.5),0,100);governmentPulse();}
@@ -1355,6 +1477,8 @@ function tick(dt){
       gerarEventoIA(tipo);
       prox=dia+25+Math.floor(Math.random()*20);
     }
+    // Decisões de gabinete e Congresso
+    if(dia%75===0&&!$('popup').classList.contains('on'))gerarDecisaoPolitica();
     // Oposição
     if(dia>=opTimer){const f=n.oposicao/100;
       if(Math.random()<f*.5){addBulletin('📢','Oposição ataca',`"${n.nome} sob pressão", diz líder oposição`,'bad');n.aprovacao-=2*f;n.legitimidade-=1;}
@@ -1426,6 +1550,16 @@ function setMobileView(view){
     else view='map';
   }
 }
+
+// Feed separado: notícias gerais e resultados das ações
+function setFeedChannel(channel){activeFeed=channel;document.querySelectorAll('.feedTabs button').forEach(b=>b.classList.toggle('active',b.dataset.feed===channel));document.querySelectorAll('#bulletin .bitem').forEach(el=>el.classList.toggle('feed-hidden',el.dataset.channel!==channel));}
+document.querySelectorAll('.feedTabs button').forEach(b=>b.addEventListener('click',()=>setFeedChannel(b.dataset.feed)));
+$('financeToggle').onclick=()=>{$('financePanel').classList.toggle('on');$('politicsPanel').classList.remove('on');};
+$('financeClose').onclick=()=>$('financePanel').classList.remove('on');
+$('politicsToggle').onclick=()=>{$('politicsPanel').classList.toggle('on');$('financePanel').classList.remove('on');updatePoliticsHud();};
+$('politicsClose').onclick=()=>$('politicsPanel').classList.remove('on');
+document.querySelectorAll('[data-money]').forEach(b=>b.onclick=()=>useTreasury(b.dataset.money));
+
 document.querySelectorAll('.mobileNavBtn').forEach(btn=>btn.addEventListener('click',()=>setMobileView(btn.dataset.mobileView)));
 document.addEventListener('click',e=>{
   if(!isMobileUI()||!document.body.classList.contains('mobile-panel-open'))return;

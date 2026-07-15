@@ -273,11 +273,20 @@ body:after{content:"";position:fixed;inset:0;z-index:100;pointer-events:none;opa
 #over{background:radial-gradient(circle at center,rgba(11,29,47,.96),#02050b 70%)}
 
 @media(max-width:1050px){#feedShell{width:290px}#app{right:300px}#topBar,#actionBar{right:312px}#clockBox{right:323px}#worldStatus,#warHud,#comboToast{transform:translateX(calc(-50% - 108px))}#worldTicker{right:324px}.sc:nth-child(n+6){display:none}}
+
+/* PERFORMANCE MODE */
+body.perf-low .backdrop-blur-2xl,body.perf-low #feedShell,body.perf-low #leftRail,body.perf-low #actionBar,body.perf-low #topBar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;box-shadow:none!important}
+body.perf-low .bitem,body.perf-low .acard,body.perf-low .nation-flag-marker{transition:none!important;animation:none!important}
+body.perf-low #worldTicker,body.perf-low #comboToast{display:none!important}
+#perfBadge{position:fixed;left:14px;top:14px;z-index:90;padding:6px 9px;border:1px solid rgba(125,211,252,.18);border-radius:999px;background:rgba(3,8,15,.72);color:#7e91aa;font:700 8px var(--mono);letter-spacing:.12em;text-transform:uppercase;pointer-events:none;display:none}
+#perfBadge.on{display:block}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 @media(max-width:820px){#leftRail{display:none}#app{left:0;right:0}#feedShell{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:42vh;z-index:40}#feedHead{height:76px;padding-top:11px}.feedTabs{margin-top:6px}#topBar{left:8px;right:8px;top:8px}.sc:nth-child(n+4){display:none}#clockBox{display:none!important}#worldStatus{display:none}#actionBar{left:8px;right:8px;bottom:calc(42vh + 16px);padding:8px}#ecoRow{display:none}#groupBar,#missionPanel,#worldTicker{display:none!important}#warHud{top:82px;transform:translateX(-50%)}#intro{padding:20px;justify-content:center}.introSide{display:none}.introCard{padding:26px 22px}#intro h1{font-size:57px}#dossier{width:min(360px,100vw)}}
 
 </style>
 
 <div id="app"></div>
+<div id="perfBadge">modo desempenho</div>
 <div id="tip"></div>
 
 <div id="intro">
@@ -455,6 +464,18 @@ let prox=22+Math.floor(Math.random()*10),escTimer=70+Math.floor(Math.random()*60
 let aiPending=false,aiQueue=[],lastAiDia=-999;
 
 /* ===== GLOBO.GL — TERRA REAL, BANDEIRAS, ROTAS E UNIDADES ===== */
+const REDUCED_MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HW_THREADS=navigator.hardwareConcurrency||4;
+const HW_MEMORY=navigator.deviceMemory||4;
+const SMALL_SCREEN=Math.min(innerWidth,innerHeight)<760;
+const PERF_LEVEL=(REDUCED_MOTION||SMALL_SCREEN||HW_THREADS<=4||HW_MEMORY<=4)?'low':(HW_THREADS>=8&&HW_MEMORY>=8?'high':'medium');
+const PERF={
+  low:{pixelRatio:1,targetFps:30,unitInterval:145,ambientFlights:0,warTroops:5,warPlanes:2,markers:10,graticules:false,atmosphere:.12,feedLimit:14},
+  medium:{pixelRatio:1.15,targetFps:45,unitInterval:95,ambientFlights:3,warTroops:7,warPlanes:3,markers:18,graticules:true,atmosphere:.15,feedLimit:18},
+  high:{pixelRatio:1.35,targetFps:60,unitInterval:66,ambientFlights:5,warTroops:9,warPlanes:4,markers:28,graticules:true,atmosphere:.17,feedLimit:22}
+}[PERF_LEVEL];
+document.body.classList.toggle('perf-low',PERF_LEVEL==='low');
+const perfBadge=$('perfBadge');if(perfBadge){perfBadge.textContent=`${PERF_LEVEL==='low'?'economia':PERF_LEVEL==='medium'?'equilibrado':'alto'} · ${PERF.targetFps} fps`;perfBadge.classList.add('on');setTimeout(()=>perfBadge.classList.remove('on'),3200);}
 const GLOBE_TEXTURE='https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg';
 const GLOBE_BUMP='https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png';
 const nationMarkers=NATIONS.map(n=>({type:'nation',n,lat:n.lat,lng:n.lng}));
@@ -497,9 +518,9 @@ function createGlobeMarker(d){
 const World=new Globe($('app'))
   .width(Math.max(320,innerWidth-418)).height(innerHeight)
   .backgroundColor('rgba(0,0,0,0)')
-  .globeImageUrl(GLOBE_TEXTURE).bumpImageUrl(GLOBE_BUMP)
-  .showAtmosphere(true).atmosphereColor('#38bdf8').atmosphereAltitude(.18)
-  .showGraticules(true)
+  .globeImageUrl(GLOBE_TEXTURE).bumpImageUrl(PERF_LEVEL==='low'?null:GLOBE_BUMP)
+  .showAtmosphere(true).atmosphereColor('#38bdf8').atmosphereAltitude(PERF.atmosphere)
+  .showGraticules(PERF.graticules)
   .pointsData(NATIONS)
   .pointLat('lat').pointLng('lng')
   .pointRadius(n=>PLAYER===n?.38:selN===n?.32:.18)
@@ -508,7 +529,7 @@ const World=new Globe($('app'))
   .pointLabel(n=>nationPointLabel(n))
   .pointsTransitionDuration(450)
   .onPointClick(n=>openDossier(n))
-  .htmlElementsData(nationMarkers)
+  .htmlElementsData(nationMarkers.slice(0,PERF.markers))
   .htmlLat('lat').htmlLng('lng').htmlAltitude(d=>d.type==='nation'?.045:(d.alt||.03))
   .htmlElement(createGlobeMarker).htmlTransitionDuration(0)
   .arcsData([])
@@ -524,15 +545,29 @@ const World=new Globe($('app'))
 World.controls().autoRotate=true;World.controls().autoRotateSpeed=.32;World.controls().enablePan=false;
 World.controls().minDistance=145;World.controls().maxDistance=520;
 World.pointOfView({lat:12,lng:-18,altitude:2.25},0);
-try{World.renderer().setPixelRatio(Math.min(devicePixelRatio,1.8));}catch(e){}
+try{World.renderer().setPixelRatio(Math.min(devicePixelRatio,PERF.pixelRatio));World.renderer().setAnimationLoop?.(null);}catch(e){}
 
-function queueGlobeRefresh(){if(globeRefreshQueued)return;globeRefreshQueued=true;requestAnimationFrame(()=>{globeRefreshQueued=false;refreshGlobeLayers();});}
+function visibleNationMarkers(){
+  const priority=[];
+  const add=n=>{if(n&&!priority.includes(n))priority.push(n);};
+  add(PLAYER);add(selN);add(PLAYER?.warTarget);
+  PLAYER?.aliados?.forEach(a=>add(NATIONS.find(n=>n.nome===a.nome)));
+  PLAYER?.acordos?.forEach(a=>add(NATIONS.find(n=>n.nome===a.nacao)));
+  (PLAYER?.vizinhos||[]).forEach(add);
+  NATIONS.slice().sort((a,b)=>b.pib-a.pib).forEach(add);
+  return priority.slice(0,PERF.markers).map(n=>nationMarkers.find(d=>d.n===n)).filter(Boolean);
+}
+function queueGlobeRefresh(){if(globeRefreshQueued||document.hidden)return;globeRefreshQueued=true;requestAnimationFrame(()=>{globeRefreshQueued=false;refreshGlobeLayers();});}
+let lastArcSignature='',lastRingSignature='',lastHtmlSignature='';
 function refreshGlobeLayers(){
-  World.pointsData([...NATIONS]);
-  World.arcsData([...ambientArcs,...routeArcs,...warArcs]);
-  World.ringsData([...impactRings]);
-  World.htmlElementsData([...nationMarkers,...mobileUnits]);
-  nationMarkers.forEach(d=>{if(!d._el)return;d._el.classList.toggle('player',PLAYER===d.n);d._el.classList.toggle('selected',selN===d.n);d._el.classList.toggle('enemy',!!(PLAYER?.emGuerra&&PLAYER.warTarget===d.n));});
+  const arcs=[...ambientArcs,...routeArcs,...warArcs],rings=[...impactRings],markers=visibleNationMarkers(),html=[...markers,...mobileUnits];
+  const arcSig=arcs.map(a=>`${a.type}:${a.startLat}:${a.startLng}:${a.endLat}:${a.endLng}`).join('|');
+  const ringSig=rings.map(r=>`${r.lat}:${r.lng}:${r._until||0}`).join('|');
+  const htmlSig=html.map(d=>d.type==='nation'?`n:${d.n.nome}`:`u:${d.scope}:${d.kind}:${Math.round(d.t*20)}`).join('|');
+  if(arcSig!==lastArcSignature){lastArcSignature=arcSig;World.arcsData(arcs);}
+  if(ringSig!==lastRingSignature){lastRingSignature=ringSig;World.ringsData(rings);}
+  if(htmlSig!==lastHtmlSignature){lastHtmlSignature=htmlSig;World.htmlElementsData(html);}
+  markers.forEach(d=>{if(!d._el)return;d._el.classList.toggle('player',PLAYER===d.n);d._el.classList.toggle('selected',selN===d.n);d._el.classList.toggle('enemy',!!(PLAYER?.emGuerra&&PLAYER.warTarget===d.n));});
 }
 function drawRoutes(n){
   routeArcs=n?n.vizinhos.map((v,i)=>({startLat:n.lat,startLng:n.lng,endLat:v.lat,endLng:v.lng,colors:['rgba(251,191,36,.15)','#fbbf24'],altitude:.11+i*.012,stroke:.18,dashLength:.2,dashGap:.15,animate:2400+i*220,type:'route'})):[];
@@ -553,7 +588,7 @@ function moveUnit(u){
 }
 function spawnAmbientFlights(){
   if(mobileUnits.some(u=>u.scope==='ambient'))return;
-  for(let i=0;i<7;i++){
+  for(let i=0;i<PERF.ambientFlights;i++){
     const a=NATIONS[Math.floor(Math.random()*NATIONS.length)],b=NATIONS[Math.floor(Math.random()*NATIONS.length)];
     if(a===b){i--;continue;}
     mobileUnits.push({scope:'ambient',kind:'plane',icon:'✈',color:'rgba(125,211,252,.9)',size:.72,from:a,to:b,t:Math.random(),speed:.00042+Math.random()*.00025,baseAlt:.07,arcAlt:.12,lat:a.lat,lng:a.lng});
@@ -563,14 +598,14 @@ function spawnAmbientFlights(){
 }
 function spawnWarUnits(a,b){
   clearWarUnits();
-  for(let i=0;i<10;i++)mobileUnits.push({scope:'war',kind:'troop',icon:i%3===0?'◆':'●',color:i<7?'#ff7a30':'#fb4b64',size:i%3===0?.85:.55,from:i<7?a:b,to:i<7?b:a,t:Math.random(),speed:.00072+Math.random()*.00045,baseAlt:.018,arcAlt:.018,lat:a.lat,lng:a.lng});
-  for(let i=0;i<4;i++)mobileUnits.push({scope:'war',kind:'plane',icon:'✈',color:i<3?'#ffd39b':'#ff9aac',size:.95,from:i<3?a:b,to:i<3?b:a,t:Math.random(),speed:.0009+Math.random()*.0004,baseAlt:.08,arcAlt:.18,lat:a.lat,lng:a.lng});
+  for(let i=0;i<PERF.warTroops;i++){const friendly=i<Math.ceil(PERF.warTroops*.7);mobileUnits.push({scope:'war',kind:'troop',icon:i%3===0?'◆':'●',color:friendly?'#ff7a30':'#fb4b64',size:i%3===0?.82:.52,from:friendly?a:b,to:friendly?b:a,t:Math.random(),speed:.00065+Math.random()*.00035,baseAlt:.018,arcAlt:.018,lat:a.lat,lng:a.lng});}
+  for(let i=0;i<PERF.warPlanes;i++){const friendly=i<Math.ceil(PERF.warPlanes*.7);mobileUnits.push({scope:'war',kind:'plane',icon:'✈',color:friendly?'#ffd39b':'#ff9aac',size:.9,from:friendly?a:b,to:friendly?b:a,t:Math.random(),speed:.00082+Math.random()*.0003,baseAlt:.08,arcAlt:.16,lat:a.lat,lng:a.lng});}
   queueGlobeRefresh();
 }
 function clearWarUnits(){mobileUnits=mobileUnits.filter(u=>u.scope!=='war');queueGlobeRefresh();}
 function updateWarUnits(now=performance.now()){
-  mobileUnits.forEach(moveUnit);
-  if(now-unitFrame>58){unitFrame=now;World.htmlElementsData([...nationMarkers,...mobileUnits]);}
+  if(document.hidden||now-unitFrame<PERF.unitInterval)return;
+  unitFrame=now;mobileUnits.forEach(moveUnit);lastHtmlSignature='';refreshGlobeLayers();
 }
 function focusNation(n,altitude=1.65){World.pointOfView({lat:n.lat,lng:n.lng,altitude},900);}
 function pulseImpact(n,rgb='251,75,100'){impactRings=[...impactRings.slice(-3),{lat:n.lat,lng:n.lng,rgb,radius:7,speed:4,repeat:700,_until:Date.now()+4200}];queueGlobeRefresh();setTimeout(()=>{impactRings=impactRings.filter(r=>!r._until||r._until>Date.now());queueGlobeRefresh();},4400);}
@@ -683,7 +718,7 @@ function gerarEventoMundo(){
   else{addTension(-4,`${flag(a.nome)} lidera missão diplomática internacional.`);addBulletin('🤝','Cúpula internacional',`${a.nome} articula uma rodada de negociações multilaterais.`,'good');}
   ambientArcs=ambientArcs.filter(x=>!x._until||x._until>Date.now());queueGlobeRefresh();
 }
-setInterval(()=>{const now=new Date();const val=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);const el=$('realClock');if(el)el.textContent=val+' BRT';},1000);
+setInterval(()=>{if(document.hidden)return;const now=new Date();const val=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);const el=$('realClock');if(el)el.textContent=val+' BRT';},1000);
 
 /* ===== AÇÕES ===== */
 const ACOES=[
@@ -722,7 +757,7 @@ function addBulletin(ico,titulo,texto,tipo){
   el.innerHTML=`<div class="bico">${ico}</div><div class="btxt"><div><strong>${titulo}</strong><span class="verified">✓</span> <span class="bhandle">${handle}</span></div><span class="bcopy">${texto}</span><span class="btime">Mês ${mesAtual} · Dia ${dia} · agora</span><div class="bactions"><button title="Responder">◯ ${Math.floor(Math.random()*18)}</button><button title="Republicar">↻ ${reposts}</button><button class="likeBtn" title="Curtir">♡ ${likes}</button><button title="Compartilhar">⌁</button></div></div>`;
   el.querySelector('.likeBtn').onclick=e=>{const b=e.currentTarget;b.textContent='♥ '+(likes+1);b.style.color='#fb7185';};
   const B=$('bulletin');B.insertBefore(el,B.firstChild);
-  while(B.children.length>22)B.removeChild(B.lastChild);
+  while(B.children.length>PERF.feedLimit)B.removeChild(B.lastChild);
   setTicker(`${ico} ${titulo} — ${texto}`);
 }
 
@@ -1177,14 +1212,20 @@ function end(t,c,txt){playing=false;if(!PLAYER)return;const n=PLAYER;
   $('over').classList.add('on');}
 
 /* ===== RENDER / TEMPO REAL ===== */
-let last=performance.now();
+let last=performance.now(),lastFrame=0,rafId=0;
+const frameBudget=1000/PERF.targetFps;
 function loop(now){
-  const dt=Math.min((now-last)/1e3,.05);last=now;
+  rafId=requestAnimationFrame(loop);
+  if(document.hidden||now-lastFrame<frameBudget)return;
+  const dt=Math.min((now-last)/1e3,.05);last=now;lastFrame=now-(now-lastFrame)%frameBudget;
   updateWarUnits(now);tick(dt);
-  requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);
-addEventListener('resize',()=>{World.width(Math.max(320,innerWidth-(innerWidth<=820?0:418))).height(innerHeight);});
+rafId=requestAnimationFrame(loop);
+document.addEventListener('visibilitychange',()=>{
+  World.controls().autoRotate=!document.hidden;
+  if(!document.hidden){last=performance.now();lastFrame=0;queueGlobeRefresh();}
+});
+let resizeTimer=0;addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{World.width(Math.max(320,innerWidth-(innerWidth<=820?0:418))).height(innerHeight);},140);},{passive:true});
 
 /* BUSCA E ATALHOS DE NAÇÕES */
 function renderSearch(q=''){

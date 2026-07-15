@@ -7,6 +7,125 @@
 
 
 
+
+
+/* ===== PATCH V9 — recursos, painéis independentes e eventos participativos ===== */
+function showResourceWarning(kind,need,have){
+  const label=kind==='influence'?'influência':kind==='cp'?'pontos de ação':'recursos';
+  const icon=kind==='influence'?'◆':'⚡';
+  showPopup(icon,`Falta de ${label}`,`Você precisa de ${need} ${label}, mas possui apenas ${have}. Ganhe influência mantendo aprovação e legitimidade altas, concluindo objetivos e tomando decisões diplomáticas.`,[
+    {l:'Entendi',t:'Voltar ao jogo',go:()=>{},msg:`Aviso de ${label}`}
+  ]);
+  addBulletin('⚠️',`Sem ${label}`,`Necessário: ${need} · disponível: ${have}.`,'warn','results');
+}
+
+// Painéis do desktop são independentes: abrir um não fecha os demais.
+function setRailExpanded(name,on){
+  const b=document.querySelector(`.railBtn[data-rail="${name}"]`);
+  if(b){b.classList.toggle('active',on);b.setAttribute('aria-expanded',String(on));}
+}
+// Em desktop, não fecha outras áreas; no celular mantém uma gaveta por vez.
+closeDesktopPanels=function(except=null){
+  if(!isMobileUI())return;
+  Object.entries(UI_PANELS).forEach(([key,id])=>{if(key!==except)$(id)?.classList.remove('on');});
+};
+function openCommandV9(name){
+  if(!PLAYER && !['help','map'].includes(name))return;
+  if(name==='map'){
+    if(PLAYER)focusNation(PLAYER,1.7);else World.pointOfView({lat:12,lng:-18,altitude:2.25},700);
+    return;
+  }
+  if(UI_PANELS[name]){
+    const panel=$(UI_PANELS[name]);
+    const opening=!panel.classList.contains('on');
+    panel.classList.toggle('on',opening);
+    setRailExpanded(name,opening);
+    if(name==='congress'&&opening)updatePoliticsHud();
+    return;
+  }
+  if(name==='country'){if(PLAYER)openDossier(PLAYER);return;}
+  if(name==='help')showPopup('🧭','Central de comando','Cada área possui seu próprio espaço. Radar, Ações, Caixa e Congresso podem permanecer abertos ao mesmo tempo no desktop. Em telas menores, os painéis viram gavetas para preservar a leitura.',[{l:'Entendi',t:'Voltar ao jogo',go:()=>{},msg:'Ajuda fechada'}]);
+}
+document.querySelectorAll('.railBtn[data-rail]').forEach(old=>{
+  const btn=old.cloneNode(true);old.replaceWith(btn);btn.addEventListener('click',()=>openCommandV9(btn.dataset.rail));
+});
+// Impede o fechamento automático ao clicar fora.
+document.addEventListener('pointerdown',e=>{},true);
+
+// Mantém o dossiê sem esconder o Radar no desktop.
+const _openDossierV9=openDossier;
+openDossier=function(n){
+  const out=(typeof _openDossierV8==='function'?_openDossierV8(n):_openDossierV9(n));
+  document.body.classList.add('dossier-open');
+  setRailExpanded('country',true);
+  // Reforça custos e mensagens do acordo comercial.
+  const btn=$('btnComercio');
+  if(btn&&PLAYER){
+    const influenceCost=2,cpCost=1;
+    btn.innerHTML=`💰 Acordo comercial <small style="display:block;margin-top:4px;font:700 8px var(--mono);opacity:.75">${cpCost} CP · ${influenceCost} INFL.</small>`;
+    if(influence<influenceCost||cp<cpCost)btn.classList.add('insufficient');
+    btn.onclick=()=>{
+      if(influence<influenceCost){showResourceWarning('influence',influenceCost,influence);return;}
+      if(cp<cpCost){showResourceWarning('cp',cpCost,cp);return;}
+      cp-=cpCost;influence-=influenceCost;
+      PLAYER.acordos.push({nacao:n.nome,bonus:.008,meses:12});
+      PLAYER.diplo+=5;n.mesh?.material?.color?.set?.(0xF5A623);
+      addBulletin('💰','Acordo comercial',`Fluxo de exportações com ${n.nome} estabelecido.`,'good','results');
+      addBulletin('◆','Influência utilizada',`A negociação consumiu ${influenceCost} pontos de influência.`,'act','results');
+      addBulletin('📈','PIB cresce','+0,8% ao ano enquanto o acordo estiver ativo.','good','results');
+      $('dossier').classList.remove('on');document.body.classList.remove('dossier-open');refresh();
+    };
+  }
+  return out;
+};
+
+function eventDecisionChoices(ev){
+  const a=ev.a,b=ev.b;
+  const focus=()=>visualizeWorldCrisis(a,b,ev.kind==='military'?'military':ev.kind);
+  const choices={
+    military:[
+      {l:'Intervir diplomaticamente',t:'Tentar impedir a escalada.',efeito:'−2 influência · +diplomacia',go:m=>{if(influence<2){showResourceWarning('influence',2,influence);return;}influence-=2;m.diplo+=6;m.legitimidade+=2;addTension(-6,'Sua mediação reduziu a tensão.');focus();},msg:'Mediação iniciada'},
+      {l:'Enviar apoio defensivo',t:'Apoiar o país ameaçado.',efeito:'Custo: 1,2% do PIB · +prestígio',go:m=>{const cost=m.pib*.012;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','Não há recursos para a operação.','bad','results');return;}m.caixa-=cost;m.diplo+=4;m.mil+=2;addTension(4,'Apoio militar elevou a tensão.');focus();},msg:'Apoio defensivo enviado'},
+      {l:'Não intervir',t:'Preservar recursos e observar.',efeito:'Sem custo · possível desgaste',go:m=>{m.diplo-=2;addTension(3,'A ausência de mediação aumentou a tensão.');},msg:'Governo não interveio'}],
+    aid:[
+      {l:'Enviar ajuda humanitária',t:'Alimentos, médicos e logística.',efeito:'Custo: 0,6% do PIB · +legitimidade',go:m=>{const cost=m.pib*.006;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','O Tesouro não consegue financiar a ajuda.','bad','results');return;}m.caixa-=cost;m.legitimidade+=5;m.diplo+=5;focus();},msg:'Ajuda humanitária enviada'},
+      {l:'Liderar coalizão',t:'Dividir custos com parceiros.',efeito:'−2 influência · custo menor',go:m=>{if(influence<2){showResourceWarning('influence',2,influence);return;}influence-=2;m.caixa-=m.pib*.003;m.diplo+=8;m.legitimidade+=4;focus();},msg:'Coalizão internacional formada'},
+      {l:'Apenas observar',t:'Não comprometer o orçamento.',efeito:'Sem custo · −reputação',go:m=>{m.diplo-=3;},msg:'Crise ignorada'}],
+    trade:[
+      {l:'Entrar na rota comercial',t:'Negociar participação do seu país.',efeito:'−1 influência · chance de novo acordo',go:m=>{if(influence<1){showResourceWarning('influence',1,influence);return;}influence--;m.pib*=1.004;m.diplo+=3;focus();},msg:'País entrou na rota'},
+      {l:'Financiar infraestrutura',t:'Investimento com retorno econômico.',efeito:'Custo: 0,8% do PIB',go:m=>{const cost=m.pib*.008;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','Projeto não foi financiado.','bad','results');return;}m.caixa-=cost;m.pib*=1.007;m.aprovacao+=2;focus();},msg:'Infraestrutura financiada'},
+      {l:'Deixar o mercado agir',t:'Sem intervenção estatal.',efeito:'Sem custo',go:()=>{},msg:'Governo ficou de fora'}],
+    diplomacy:[
+      {l:'Participar da cúpula',t:'Enviar sua delegação.',efeito:'−1 influência · +diplomacia',go:m=>{if(influence<1){showResourceWarning('influence',1,influence);return;}influence--;m.diplo+=6;m.legitimidade+=1;focus();},msg:'Delegação enviada'},
+      {l:'Oferecer mediação',t:'Assumir protagonismo nas negociações.',efeito:'−2 influência · alto retorno',go:m=>{if(influence<2){showResourceWarning('influence',2,influence);return;}influence-=2;m.diplo+=9;m.aprovacao+=2;focus();},msg:'Mediação oferecida'},
+      {l:'Recusar convite',t:'Concentrar-se em temas internos.',efeito:'−2 diplomacia',go:m=>{m.diplo-=2;},msg:'Convite recusado'}],
+    protest:[
+      {l:'Apoiar diálogo',t:'Defender negociação e direitos civis.',efeito:'+legitimidade · risco diplomático',go:m=>{m.legitimidade+=3;m.diplo+=2;focus();},msg:'Diálogo apoiado'},
+      {l:'Oferecer observadores',t:'Enviar missão internacional.',efeito:'−1 influência',go:m=>{if(influence<1){showResourceWarning('influence',1,influence);return;}influence--;m.diplo+=5;focus();},msg:'Observadores enviados'},
+      {l:'Não se envolver',t:'Tratar como assunto interno.',efeito:'Sem custo',go:()=>{},msg:'Governo não se envolveu'}],
+    science:[
+      {l:'Firmar parceria científica',t:'Compartilhar laboratórios e pesquisadores.',efeito:'Custo: 0,5% do PIB · +ciência',go:m=>{const cost=m.pib*.005;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','A parceria não saiu do papel.','bad','results');return;}m.caixa-=cost;m.ciencia+=6;m.diplo+=2;focus();},msg:'Parceria científica firmada'},
+      {l:'Comprar licença tecnológica',t:'Acelerar uma tecnologia estratégica.',efeito:'Custo: 0,9% do PIB',go:m=>{const cost=m.pib*.009;if(m.caixa<cost){addBulletin('⚠️','Caixa insuficiente','Licença não foi adquirida.','bad','results');return;}m.caixa-=cost;m.ciencia+=9;focus();},msg:'Tecnologia adquirida'},
+      {l:'Acompanhar à distância',t:'Sem compromisso financeiro.',efeito:'Sem custo',go:()=>{},msg:'Evento apenas acompanhado'}]
+  };
+  return choices[ev.kind]||choices.diplomacy;
+}
+function participateMapEvent(ev){
+  if(!PLAYER){openDossier(ev.a);return;}
+  focusNation(ev.kind==='military'?ev.b:ev.a,1.45);
+  showPopup(ev.icon,ev.title,`<span class="worldDecisionBadge">EVENTO INTERNACIONAL AO VIVO</span>${flag(ev.a.nome)} ${ev.a.nome}${['trade','military','diplomacy','aid'].includes(ev.kind)?` está envolvido com ${flag(ev.b.nome)} ${ev.b.nome}`:''}. ${ev.text}. Sua decisão terá impacto político, financeiro e diplomático.`,eventDecisionChoices(ev));
+}
+renderMapActivity=function(){
+  const list=$('mapActivityList'),count=$('mapActivityCount');if(!list)return;
+  count.textContent=mapLiveEvents.length;
+  list.innerHTML=mapLiveEvents.map((e,i)=>`<button class="mapEventCard" data-focus="${i}"><span class="mapEventIcon">${e.icon}</span><span><strong>${e.title}</strong><small>${flag(e.a.nome)} ${e.a.nome}${['trade','military','diplomacy','aid'].includes(e.kind)?` → ${flag(e.b.nome)} ${e.b.nome}`:''}</small></span><em>AGORA</em><span class="joinEvent" data-join="${i}">PARTICIPAR</span></button>`).join('');
+  list.querySelectorAll('[data-focus]').forEach(card=>card.onclick=e=>{
+    const ev=mapLiveEvents[+card.dataset.focus];if(!ev)return;
+    if(e.target.closest('[data-join]'))participateMapEvent(ev);else{focusNation(ev.kind==='military'?ev.b:ev.a,1.45);openDossier(ev.kind==='military'?ev.b:ev.a);}
+  });
+};
+renderMapActivity();
+
 </script>
 <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
 <style>
@@ -488,6 +607,38 @@ body.panel-open #mapActivity,body.panel-open #missionPanel{opacity:.18;pointer-e
 #leaderProfile.on{display:block}.lpTop{display:flex;justify-content:space-between;gap:12px;align-items:center}.lpK{font:700 8px var(--mono);letter-spacing:.16em;color:#64748b}.lpTitle{font-size:16px;font-weight:900;margin-top:3px}.lpScore{font:800 12px var(--mono);color:#a78bfa}.lpDesc{font-size:10px;line-height:1.5;color:#94a3b8;margin-top:6px}.lpTrack{height:4px;background:rgba(255,255,255,.06);border-radius:9px;margin-top:8px;overflow:hidden}.lpTrack i{display:block;height:100%;background:linear-gradient(90deg,#22d3ee,#a78bfa);transition:width .4s}
 .actionReason{font:700 7px var(--mono);color:#fbbf24;line-height:1.2;min-height:17px;margin-top:2px}.acard.off{opacity:.58!important;filter:saturate(.55)}.acard.off:hover{transform:none!important;border-color:rgba(251,191,36,.25)!important}.worldDecisionBadge{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:rgba(251,75,100,.12);border:1px solid rgba(251,75,100,.28);font:800 8px var(--mono);color:#fb7185;letter-spacing:.08em;margin-bottom:8px}
 @media(max-width:900px){#leaderProfile{left:10px;right:10px;top:auto;bottom:76px;width:auto;max-width:390px}}
+
+
+
+/* ===== PATCH V9: layout em zonas independentes + participação em eventos ===== */
+@media (min-width:1200px){
+  :root{--rail-w:146px;--left-zone:292px;--right-zone:330px;--zone-gap:12px}
+  #app{left:calc(var(--rail-w) + var(--left-zone) + var(--zone-gap));right:var(--right-zone)}
+  #topBar{left:calc(var(--rail-w) + var(--left-zone) + var(--zone-gap));right:var(--right-zone)}
+  #actionBar{left:calc(var(--rail-w) + var(--left-zone) + var(--zone-gap));right:var(--right-zone);bottom:0}
+  #leftRail{left:4px;width:142px}
+  #missionPanel{left:158px;top:78px;width:280px;max-height:286px;overflow:auto}
+  #mapActivity{left:158px;top:376px;bottom:198px;width:280px;max-height:none}
+  #mapActivityList{max-height:calc(100vh - 640px);min-height:120px}
+  #feedShell{right:8px;top:8px;bottom:8px;width:314px;max-height:none}
+  #worldTicker{left:450px;right:342px}
+  #groupBar{left:450px}
+  #financePanel,#politicsPanel{top:82px;bottom:auto;width:310px;max-height:44vh;overflow:auto;z-index:34}
+  #financePanel{left:calc(var(--rail-w) + var(--left-zone) + 24px)}
+  #politicsPanel{right:calc(var(--right-zone) + 18px);left:auto}
+  #financePanel.on,#politicsPanel.on{display:block;transform:none;opacity:1;pointer-events:auto}
+  body.panel-open #mapActivity,body.panel-open #missionPanel{opacity:1;pointer-events:auto}
+  body.dossier-open #feedShell{opacity:1;pointer-events:auto}
+  #dossier{right:330px;width:310px;z-index:36}
+}
+.mapEventCard{position:relative;padding-right:64px!important;min-height:58px}
+.mapEventCard .joinEvent{position:absolute;right:8px;bottom:8px;border:1px solid rgba(56,189,248,.3);background:rgba(56,189,248,.1);color:#7dd3fc;border-radius:8px;padding:5px 7px;font:800 7px var(--mono);letter-spacing:.06em;cursor:pointer}
+.mapEventCard .joinEvent:hover{background:rgba(56,189,248,.2);color:#e0f2fe}
+.resourceAlert{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;margin:8px 0;border-radius:12px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:#fde68a;font-size:11px;line-height:1.45}
+.dbtn.insufficient{border-color:#f59e0b!important;color:#fbbf24!important;background:rgba(245,158,11,.07)!important}
+@media (max-width:1199px){
+  #financePanel,#politicsPanel{max-height:68dvh}
+}
 
 </style>
 

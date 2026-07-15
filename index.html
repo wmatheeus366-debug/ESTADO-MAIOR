@@ -141,6 +141,101 @@ renderMapActivity();
 
 </script>
 
+<style>
+/* ===== V16 — acontecimentos vivos ===== */
+.eventLife{grid-column:2/-1;display:grid;gap:5px;margin-top:2px;min-width:0}
+.eventLifeTop{display:flex;align-items:center;justify-content:space-between;gap:6px;font:700 6px var(--mono);letter-spacing:.08em;color:#778aa1;text-transform:uppercase}
+.eventLifeTop b{font-size:6px;color:#b8c8d9}.eventLifeTop b.critical{color:#ff6075}.eventLifeTop b.alert{color:#fbbf24}.eventLifeTop b.safe{color:#45e0c3}.eventLifeTop b.done{color:#65d9ff}
+.eventBar{height:3px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden}.eventBar i{display:block;height:100%;border-radius:inherit;transition:width .35s}
+.eventOutcome{font:700 7px/1.35 var(--mono);color:#77e7d4;white-space:normal}
+.mapEventCard.eventResolved{opacity:.72;border-color:rgba(101,217,255,.18)}
+.mapEventCard.eventEscalated{box-shadow:inset 2px 0 #ff4965;background:rgba(255,53,83,.045)}
+.mapEventActions .danger{border-color:rgba(255,73,101,.34)!important;color:#ff8294!important}
+@media(max-width:820px){.eventLifeTop,.eventLifeTop b{font-size:7px}.eventOutcome{font-size:8px}.eventBar{height:4px}}
+</style>
+<script type="text/plain" id="deferred-v16-source">
+/* ===== V16 — ciclo de vida, intervenção e escalada dos acontecimentos ===== */
+(function(){
+  const crisisKinds=new Set(['military','disease','famine','protest']);
+  const positiveKinds=new Set(['diplomacy','trade','science','celebration','aid']);
+  const originalPushEvent=pushMapLiveEvent;
+  let lastEventLifeDay=-1;
+
+  function eventSeverity(kind){return ({military:82,disease:68,famine:65,protest:56,diplomacy:34,trade:28,science:24,celebration:18,aid:32})[kind]||46;}
+  function normalizeEvent(ev){
+    if(!ev)return ev;
+    if(ev.severity==null)ev.severity=eventSeverity(ev.kind)+Math.round(Math.random()*10-5);
+    if(ev.startedDay==null)ev.startedDay=dia||0;
+    if(ev.deadlineDay==null)ev.deadlineDay=(dia||0)+35+Math.floor(Math.random()*36);
+    if(!ev.lifeState)ev.lifeState='active';
+    if(ev.escalations==null)ev.escalations=0;
+    return ev;
+  }
+  function targetName(ev){return ev.kind==='military'&&ev.b?ev.b.nome:ev.a?.nome||'região afetada';}
+  function eventRoute(ev){return `${ev.a?flag(ev.a.nome)+' '+ev.a.nome:'Mundo'}${ev.b&&['trade','military','diplomacy','aid'].includes(ev.kind)?` → ${flag(ev.b.nome)} ${ev.b.nome}`:''}`;}
+  function canPay(costInf,costCash){return influence>=costInf&&PLAYER&&PLAYER.caixa>=costCash;}
+  function spend(costInf,costCash){influence-=costInf;PLAYER.caixa-=costCash;}
+  function redrawEvent(ev){spawnMapEventVisual(ev);renderMapActivity();refresh();}
+
+  function finishEvent(ev,outcome,source='naturalmente'){
+    if(!ev||ev.lifeState==='resolved')return;
+    const good=outcome==='good';ev.lifeState='resolved';ev.resolvedDay=dia;ev.severity=good?Math.min(ev.severity,12):Math.max(ev.severity,88);
+    ev.outcome=good?`Resolvido ${source}: a situação foi estabilizada.`:`Desfecho negativo ${source}: a crise deixou consequências.`;
+    addTension(good?-3:5,good?'Uma crise internacional chegou ao fim.':'Um acontecimento terminou com graves consequências.');
+    addBulletin(good?'✅':'⚠️',good?'Situação resolvida':'Crise deixa consequências',`${ev.title} — ${ev.outcome}`,good?'good':'bad','results');
+    renderMapActivity();
+  }
+  function escalateEvent(ev,source='A situação saiu do controle'){
+    if(!ev||ev.lifeState==='resolved')return;
+    ev.escalations++;ev.lifeState='escalated';ev.severity=clamp(ev.severity+22,0,100);ev.deadlineDay=dia+24+Math.floor(Math.random()*24);
+    if(!crisisKinds.has(ev.kind)){ev.kind='protest';ev.icon='🚨';ev.color='#fb4b64';}
+    ev.text=`${source}. A intensidade chegou a ${Math.round(ev.severity)}%.`;
+    addTension(7,`${ev.title} escalou e exige atenção internacional.`);spawnMapEventVisual(ev);
+    addBulletin('🚨',`${ev.title} escala`,`${targetName(ev)} entra em uma fase mais perigosa.`,'war','general');renderMapActivity();
+  }
+
+  pushMapLiveEvent=function(silent=false){const r=originalPushEvent(silent);mapLiveEvents.forEach(normalizeEvent);renderMapActivity();return r;};
+
+  participateMapEvent=function(ev){
+    normalizeEvent(ev);if(ev.lifeState==='resolved')return showPopup('📜','ACONTECIMENTO ENCERRADO',ev.outcome||'Este acontecimento já chegou ao fim.',[{l:'Fechar',t:'Voltar ao mapa',go:()=>{},msg:'Desfecho consultado'}]);
+    const crisis=crisisKinds.has(ev.kind),cash=Math.max(1,PLAYER.pib*.004),hardCash=Math.max(1,PLAYER.pib*.008);
+    const desc=`${eventRoute(ev)}\nIntensidade: ${Math.round(ev.severity)}% · Prazo estimado: ${Math.max(0,ev.deadlineDay-dia)} dias. Sem intervenção, o acontecimento pode melhorar, terminar sozinho ou escalar.`;
+    const choices=[
+      {l:crisis?'Mediar e enviar ajuda':'Fortalecer o acontecimento',t:crisis?'Diplomacia, ajuda e contenção coordenadas.':'Investir para ampliar os efeitos positivos.',efeito:`−2 influência · −${money(cash)} · reduz a intensidade`,go:m=>{if(!canPay(2,cash)){addBulletin('⚠️','Recursos insuficientes','A intervenção exige influência e caixa.','bad','results');return;}spend(2,cash);ev.severity=clamp(ev.severity-(crisis?31:18),0,100);m.diplo+=4;m.legitimidade+=2;addTension(-4,'A intervenção reduziu a pressão internacional.');if(ev.severity<=16)finishEvent(ev,'good','pela sua intervenção');else{ev.lifeState='active';ev.deadlineDay+=14;redrawEvent(ev);}},msg:'Intervenção construtiva iniciada'},
+      {l:crisis?'Explorar a crise':'Apropriar-se do sucesso',t:crisis?'Obter vantagem interna enquanto outros pagam o preço.':'Usar o momento como propaganda do governo.',efeito:'Ganha apoio e caixa · legitimidade e diplomacia caem',go:m=>{m.caixa+=cash*.7;m.aprovacao+=4;m.legitimidade-=5;m.diplo-=4;ev.severity=clamp(ev.severity+(crisis?12:5),0,100);addTension(3,'A exploração política tornou o cenário mais instável.');if(ev.severity>=88)escalateEvent(ev,'A exploração política agravou o evento');else redrawEvent(ev);},msg:'Governo escolheu tirar vantagem'},
+      {l:crisis?'Escalar a intervenção':'Sabotar o acontecimento',t:crisis?'Ação direta, pressão militar e alto risco.':'Criar instabilidade para enfraquecer os envolvidos.',efeito:`−1 influência · −${money(hardCash)} · risco extremo`,war:true,go:m=>{if(!canPay(1,hardCash)){addBulletin('⚠️','Recursos insuficientes','A operação não pode ser financiada.','bad','results');return;}spend(1,hardCash);m.mil+=2;m.legitimidade-=4;escalateEvent(ev,'Sua ação direta ampliou a instabilidade');},msg:'Acontecimento deliberadamente escalado'},
+      {l:'Observar sem intervir',t:'O mundo continuará evoluindo sozinho.',efeito:'Sem custo · resultado imprevisível',go:m=>{ev.observed=true;ev.deadlineDay=Math.max(dia+8,ev.deadlineDay-7);m.diplo-=crisis?1:0;renderMapActivity();},msg:'Governo decidiu apenas observar'}
+    ];
+    showPopup(ev.icon,ev.title.toUpperCase(),desc,choices);
+  };
+
+  renderMapActivity=function(){
+    const list=document.getElementById('mapActivityList'),count=document.getElementById('mapActivityCount');if(!list)return;
+    mapLiveEvents.forEach(normalizeEvent);const active=mapLiveEvents.filter(e=>e.lifeState!=='resolved').length;if(count)count.textContent=active;
+    list.innerHTML=mapLiveEvents.map((e,i)=>{const resolved=e.lifeState==='resolved',escalated=e.lifeState==='escalated',days=Math.max(0,e.deadlineDay-dia),sev=Math.round(e.severity),level=resolved?'ENCERRADO':sev>=75?'CRÍTICO':sev>=50?'INSTÁVEL':'CONTROLADO',tone=resolved?'done':sev>=75?'critical':sev>=50?'alert':'safe',bar=resolved?'#65d9ff':sev>=75?'#fb4b64':sev>=50?'#fbbf24':'#34d399';return `<article class="mapEventCard ${resolved?'eventResolved':''} ${escalated?'eventEscalated':''}" data-index="${i}"><span class="mapEventIcon">${e.icon}</span><span><strong>${e.title}</strong><small>${eventRoute(e)}</small></span><em>${resolved?'FIM':escalated?'ESCALOU':'AGORA'}</em><div class="eventLife"><div class="eventLifeTop"><span>${resolved?'DESFECHO':`INTENSIDADE ${sev}%`}</span><b class="${tone}">${resolved?level:`${level} · ${days} DIAS`}</b></div><div class="eventBar"><i style="width:${resolved?100:sev}%;background:${bar}"></i></div>${resolved?`<div class="eventOutcome">${e.outcome}</div>`:''}</div><div class="mapEventActions"><button data-view="${i}">VER NO MAPA</button>${resolved?`<button data-result="${i}">DESFECHO</button>`:`<button class="primary ${escalated?'danger':''}" data-participate="${i}">INTERVIR</button>`}</div></article>`;}).join('');
+    list.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=x=>{x.stopPropagation();const e=mapLiveEvents[+btn.dataset.view];if(e)focusNation(e.kind==='military'&&e.b?e.b:e.a,1.45);});
+    list.querySelectorAll('[data-participate]').forEach(btn=>btn.onclick=x=>{x.stopPropagation();participateMapEvent(mapLiveEvents[+btn.dataset.participate]);});
+    list.querySelectorAll('[data-result]').forEach(btn=>btn.onclick=x=>{x.stopPropagation();participateMapEvent(mapLiveEvents[+btn.dataset.result]);});
+  };
+
+  function eventLifeCycle(){
+    if(!PLAYER||dia===lastEventLifeDay)return;lastEventLifeDay=dia;mapLiveEvents.forEach(normalizeEvent);
+    mapLiveEvents.filter(e=>e.lifeState!=='resolved').forEach(ev=>{
+      if(dia%5===0){const crisis=crisisKinds.has(ev.kind);ev.severity=clamp(ev.severity+(crisis?(Math.random()*8-3):(Math.random()*6-4)),5,100);}
+      if(dia>=ev.deadlineDay){
+        if(ev.severity<=35||(!crisisKinds.has(ev.kind)&&Math.random()<.7))finishEvent(ev,'good','naturalmente');
+        else if(ev.severity>=72&&ev.escalations<2)escalateEvent(ev,'A falta de uma solução permitiu nova escalada');
+        else if(ev.escalations>=2||Math.random()<.48)finishEvent(ev,'bad','sem uma solução');
+        else{ev.severity=clamp(ev.severity-18,0,100);ev.deadlineDay=dia+20+Math.floor(Math.random()*20);}
+      }
+    });
+    mapLiveEvents=mapLiveEvents.filter(e=>e.lifeState!=='resolved'||dia-e.resolvedDay<=18).slice(0,3);renderMapActivity();
+  }
+  const tickV16=tick;tick=function(dt){const before=dia,r=tickV16(dt);if(PLAYER&&dia!==before)eventLifeCycle();return r;};
+  setTimeout(()=>{mapLiveEvents.forEach(normalizeEvent);renderMapActivity();},1000);
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
 <style>
 :root{
@@ -2451,6 +2546,11 @@ body.game-on #v11Tools{display:flex}
   const refreshV14=refresh;
   refresh=function(){const result=refreshV14();const cpEl=document.getElementById('desktopCp'),infEl=document.getElementById('desktopInfluence');if(cpEl)cpEl.textContent=`${cp}/${CP_MAX}`;if(infEl)infEl.textContent=influence;return result;};
 })();
+</script>
+
+<script>
+/* V16 depende do núcleo e de todos os patches anteriores. */
+Function(document.getElementById('deferred-v16-source').textContent)();
 </script>
 
 

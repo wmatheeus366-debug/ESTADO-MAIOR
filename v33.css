@@ -168,3 +168,32 @@ body.game-on #soundToggleV31 { display: flex !important; }
   #chapterBanner { top: 128px !important; }
   #comboToast { top: 128px !important; }
 }
+
+/* ===== FEED SHELL — FUNDO OPACO =====
+   O globo estava aparecendo através do painel
+   por causa do background com 78% de opacidade */
+#feedShell {
+  background: rgba(4,9,17,.97) !important;
+  backdrop-filter: blur(0px) !important;
+  -webkit-backdrop-filter: blur(0px) !important;
+}
+
+/* O grain do body:after (z-index:100) ficava
+   por cima do conteúdo do feed — corrige */
+#feedShell,
+#feedShell * {
+  isolation: isolate;
+}
+
+/* Garante que o bulletin não mostra o fundo */
+#bulletin {
+  background: rgba(4,9,17,.97) !important;
+}
+
+#feedHead {
+  background: rgba(4,9,17,.97) !important;
+}
+
+#feedCompose {
+  background: rgba(4,9,17,.97) !important;
+}

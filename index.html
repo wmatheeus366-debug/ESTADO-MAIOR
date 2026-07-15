@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#02050b">
+<title>Estado Maior — Simulação Geopolítica</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
+<style>
+:root{
+  --ink:#04080F;--ink2:#08111F;--ink3:#0E1A2E;
+  --bone:#F0EDE4;--dim:#4A5878;--dim2:#7A8BAA;
+  --amber:#F5A623;--teal:#3ECFBA;--rose:#E84060;--violet:#8B78F0;--war:#FF5520;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;--sans:"Helvetica Neue",Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--bone);font-family:var(--sans);user-select:none}
+#app{position:fixed;inset:0;z-index:0}
+canvas{display:block}
+
+#intro{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:radial-gradient(circle at 50% 50%,rgba(14,26,46,.5),rgba(4,8,15,.94) 70%);
+  z-index:50;transition:opacity .8s;pointer-events:none}
+#intro.off{opacity:0;pointer-events:none}
+#intro h1{font-size:clamp(52px,8vw,96px);font-weight:900;letter-spacing:-.05em;line-height:.85;text-align:center;pointer-events:none}
+#intro h1 em{font-style:normal;color:var(--amber)}
+#intro p{font-size:15px;color:var(--dim2);max-width:360px;text-align:center;line-height:1.6;pointer-events:none}
+#hint{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);animation:pl 2s ease-in-out infinite;pointer-events:none}
+@keyframes pl{0%,100%{opacity:.2}50%{opacity:1}}
+
+#tip{position:fixed;pointer-events:none;padding:7px 13px;background:rgba(4,8,15,.95);border:1px solid rgba(255,255,255,.12);
+  font-family:var(--mono);font-size:13px;opacity:0;transition:opacity .1s;white-space:nowrap;
+  transform:translate(14px,-50%);z-index:40;border-radius:2px}
+
+/* TOP BAR */
+#topBar{position:fixed;top:0;left:0;right:0;height:70px;
+  background:linear-gradient(180deg,rgba(4,8,15,.97) 0%,transparent 100%);
+  display:none;align-items:center;padding:0 18px;gap:0;z-index:10;pointer-events:none}
+#topBar.on{display:flex}
+#playerFlag{font-size:38px;line-height:1;flex-shrink:0}
+#playerName{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:0 14px;flex-shrink:0}
+#statRow{display:flex;gap:3px;flex:1;overflow:hidden}
+.sc{display:flex;align-items:center;gap:5px;padding:5px 9px;background:rgba(8,17,31,.85);
+  border:1px solid rgba(255,255,255,.07);border-radius:3px;flex-shrink:0}
+.sc .si{font-size:16px;line-height:1}
+.sc .sv{font-size:16px;font-weight:700;font-family:var(--mono);min-width:26px}
+.sc .sl{font-size:7.5px;color:var(--dim2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;display:block;margin-top:1px}
+.sc .tr{font-size:10px;margin-left:1px}
+.tr.up{color:var(--teal)}.tr.dn{color:var(--rose)}.tr.eq{color:var(--dim)}
+#cpBar{display:flex;gap:4px;margin-left:8px;flex-shrink:0;pointer-events:none;align-items:center}
+.pip{width:10px;height:10px;border:1.5px solid var(--violet);transform:rotate(45deg);transition:.3s}
+.pip.on{background:var(--violet);box-shadow:0 0 9px rgba(139,120,240,.8)}
+
+/* RELÓGIO */
+#clockBox{position:fixed;top:12px;right:16px;display:none;flex-direction:column;align-items:flex-end;z-index:10;pointer-events:auto}
+#clockBox.on{display:flex}
+#dateStr{font-family:var(--mono);font-size:13px;letter-spacing:.04em}
+#dayStr{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;margin-top:2px}
+.spd{display:flex;gap:2px;margin-top:6px;background:rgba(8,17,31,.9);border:1px solid rgba(255,255,255,.08);padding:3px;border-radius:3px}
+.spd button{width:32px;height:26px;border:0;background:transparent;color:var(--dim);font-size:10px;font-family:var(--mono);cursor:pointer;border-radius:2px;transition:.15s}
+.spd button:hover{color:var(--teal)}.spd button.act{background:var(--teal);color:var(--ink)}
+
+/* BOLETIM — o coração do jogo */
+#bulletin{position:fixed;right:16px;top:78px;width:260px;display:none;flex-direction:column;gap:5px;z-index:9;pointer-events:none;max-height:calc(100vh - 180px);overflow:hidden}
+#bulletin.on{display:flex}
+.bitem{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;background:rgba(8,17,31,.92);
+  border-left:3px solid var(--dim);border-radius:0 3px 3px 0;animation:slideIn .35s ease;flex-shrink:0;
+  transition:opacity .5s}
+.bitem.fade{opacity:0}
+@keyframes slideIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.bitem.good{border-color:var(--teal)}.bitem.bad{border-color:var(--rose)}
+.bitem.warn{border-color:var(--amber)}.bitem.war{border-color:var(--war)}.bitem.act{border-color:var(--violet)}
+.bitem.ai-event{border-color:#A78BFA;background:rgba(14,8,31,.95)}
+.bico{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+.btxt{font-size:10.5px;line-height:1.5;color:var(--dim2)}
+.btxt strong{color:var(--bone);font-size:12px;display:block;margin-bottom:2px;line-height:1.3}
+.bitem .btime{font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:3px;display:block;letter-spacing:.08em}
+
+/* GRUPOS */
+#groupBar{position:fixed;left:16px;bottom:165px;display:none;flex-direction:column;gap:4px;z-index:9;pointer-events:none}
+#groupBar.on{display:flex}
+.grp{display:flex;align-items:center;gap:7px;padding:5px 9px;background:rgba(8,17,31,.88);border-radius:3px}
+.grp .gi{font-size:14px;width:18px;text-align:center}
+.grp .gbar{width:70px;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.grp .gfill{height:100%;border-radius:2px;transition:width .5s,background .5s}
+.grp .gv{font-family:var(--mono);font-size:11px;font-weight:700;width:22px;text-align:right}
+
+/* WAR HUD */
+#warHud{position:fixed;left:50%;top:78px;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:5px;z-index:15;pointer-events:none}
+#warHud.on{display:flex}
+#warTitle{font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--war);animation:warP 1s ease-in-out infinite}
+@keyframes warP{0%,100%{opacity:.6}50%{opacity:1}}
+#warBattle{display:flex;align-items:center;gap:12px}
+.wside{display:flex;flex-direction:column;align-items:center;gap:3px}
+.wside .wf{font-size:32px;line-height:1}
+.wside .wn{font-family:var(--mono);font-size:8.5px;color:var(--dim2)}
+.wside .ws{font-size:18px;font-weight:800;font-family:var(--mono)}
+#warTrack{width:160px;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:flex}
+#wBarL{background:var(--teal);border-radius:3px 0 0 3px;transition:width .6s}
+#wBarR{background:var(--rose);border-radius:0 3px 3px 0;transition:width .6s;margin-left:auto}
+.wvs{font-size:16px;font-weight:900;color:var(--war)}
+
+/* ACTION BAR */
+#actionBar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px 16px;
+  background:linear-gradient(0deg,rgba(4,8,15,.98) 0%,rgba(4,8,15,.7) 80%,transparent 100%);
+  display:none;z-index:10}
+#actionBar.on{display:block}
+#ecoRow{display:flex;gap:12px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.eco .el{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-family:var(--mono);display:block;margin-bottom:2px}
+.eco .ev2{font-size:17px;font-weight:700;font-family:var(--mono)}
+#taxWrap{margin-left:auto;display:flex;align-items:center;gap:7px;background:rgba(8,17,31,.8);padding:7px 11px;border-radius:3px;border:1px solid rgba(255,255,255,.06)}
+.tl{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.txb{width:24px;height:24px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--dim2);font-family:var(--mono);font-size:15px;cursor:pointer;border-radius:2px;transition:.15s;line-height:1}
+.txb:hover{border-color:var(--amber);color:var(--amber)}
+#taxDisp{font-family:var(--mono);font-size:20px;font-weight:700;min-width:48px;text-align:center}
+#taxLbl{font-family:var(--mono);font-size:8.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;text-align:center}
+#actionRow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+#actionRow::-webkit-scrollbar{display:none}
+.acard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 11px;
+  background:rgba(8,17,31,.92);border:1.5px solid rgba(255,255,255,.07);border-radius:4px;
+  cursor:pointer;transition:.18s;flex-shrink:0;min-width:78px;max-width:88px;
+  color:var(--bone);font-family:var(--sans);position:relative}
+.acard:hover:not(.off){border-color:rgba(255,255,255,.26);background:rgba(14,26,46,.98);transform:translateY(-3px)}
+.acard.off{opacity:.22;cursor:not-allowed}
+.acard .ai{font-size:24px;line-height:1}
+.acard .at{font-size:9px;font-weight:600;text-align:center;line-height:1.3}
+.acard .ac{font-family:var(--mono);font-size:8px;color:var(--violet)}
+.acard .am{font-family:var(--mono);font-size:7.5px;color:var(--amber)}
+.acard .cblk{position:absolute;inset:0;background:rgba(4,8,15,.86);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8.5px;color:var(--dim);border-radius:4px}
+
+/* DOSSIER */
+#dossier{position:fixed;right:0;top:0;bottom:0;width:285px;background:rgba(4,8,15,.97);
+  border-left:1px solid rgba(255,255,255,.07);padding:20px 17px;transform:translateX(105%);
+  transition:transform .4s cubic-bezier(.15,1,.3,1);z-index:30;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+#dossier.on{transform:translateX(0)}
+#dClose{position:absolute;top:13px;right:13px;background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer;z-index:31}
+#dClose:hover{color:var(--bone)}
+#dFlag2{font-size:46px;text-align:center}
+#dCountry{font-size:22px;font-weight:800;letter-spacing:-.02em;text-align:center}
+#dSub{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);text-align:center}
+#dTrait{font-size:11px;line-height:1.55;color:var(--dim2);padding:9px;background:rgba(139,120,240,.08);border-left:2px solid var(--violet);border-radius:0 3px 3px 0}
+.dstats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ds{background:var(--ink2);padding:9px 11px;border-radius:3px;border:1px solid rgba(255,255,255,.05)}
+.ds .dl{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:3px}
+.ds .dv{font-family:var(--mono);font-size:15px;font-weight:700}
+.ds .dbar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:4px;overflow:hidden}
+.ds .dfill{height:100%;border-radius:2px;transition:width .5s}
+.dbtn{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:11px;width:100%;border:1.5px solid;background:transparent;cursor:pointer;transition:.18s;border-radius:3px;margin-top:3px;pointer-events:auto}
+.dbtn-a{border-color:var(--amber);color:var(--amber)}.dbtn-a:hover{background:var(--amber);color:var(--ink)}
+.dbtn-w{border-color:var(--war);color:var(--war)}.dbtn-w:hover{background:var(--war);color:var(--ink)}
+.dbtn-t{border-color:var(--teal);color:var(--teal)}.dbtn-t:hover{background:var(--teal);color:var(--ink)}
+
+/* MANCHETE */
+#hl{position:fixed;top:78px;left:50%;transform:translateX(-50%) translateY(-12px);font-family:var(--mono);font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;padding:7px 16px;background:var(--amber);color:var(--ink);
+  font-weight:800;opacity:0;transition:opacity .4s,transform .4s;z-index:35;max-width:88vw;text-align:center;border-radius:2px;pointer-events:none}
+#hl.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#hl.war{background:var(--war);color:#fff}
+
+/* POPUP */
+#popup{position:fixed;inset:0;background:rgba(4,8,15,.92);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+#popup.on{display:flex}
+.pbox{background:var(--ink2);border:1px solid rgba(255,255,255,.1);padding:28px;max-width:500px;width:100%;display:flex;flex-direction:column;gap:14px;border-radius:4px}
+.pbox .pi{font-size:46px;text-align:center}
+.pbox h3{font-size:22px;font-weight:800;letter-spacing:-.02em;text-align:center}
+.pbox .pdesc{font-size:13px;line-height:1.65;color:var(--dim2);text-align:center}
+.pchoices{display:flex;flex-direction:column;gap:5px}
+.popt{border:1px solid rgba(255,255,255,.1);background:var(--ink3);padding:12px 14px;cursor:pointer;
+  color:var(--bone);font-size:12.5px;line-height:1.5;transition:.15s;width:100%;text-align:left;border-radius:3px;font-family:var(--sans);pointer-events:auto}
+.popt:hover{border-color:var(--teal);background:rgba(62,207,186,.07)}
+.popt .pl{font-size:9px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:2px}
+.popt .pe{font-size:9px;font-family:var(--mono);color:var(--dim2);display:block;margin-top:3px}
+.popt.war-opt:hover{border-color:var(--war)}.popt.war-opt .pl{color:var(--war)}
+
+/* LOADING IA */
+#aiLoader{position:fixed;bottom:175px;left:50%;transform:translateX(-50%);display:none;
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:#A78BFA;z-index:20;padding:6px 14px;background:rgba(8,17,31,.9);border-radius:3px;
+  border:1px solid rgba(167,139,250,.3);pointer-events:none}
+#aiLoader.on{display:block}
+@keyframes dots{0%,100%{opacity:.3}50%{opacity:1}}
+#aiLoader span{animation:dots 1s ease-in-out infinite}
+#aiLoader span:nth-child(2){animation-delay:.2s}
+#aiLoader span:nth-child(3){animation-delay:.4s}
+
+/* FIM */
+#over{position:fixed;inset:0;background:rgba(4,8,15,.97);display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;z-index:70;padding:24px}
+#over.on{display:flex}
+#oTitle{font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:-.04em}
+#oText{max-width:440px;color:var(--dim2);font-size:14px;line-height:1.7}
+#oGrid{display:flex;gap:24px;margin-top:4px}
+.os{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.os em{display:block;font-style:normal;font-size:22px;font-weight:800;color:var(--bone);margin-top:5px;letter-spacing:0}
+.obtn{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;padding:12px 36px;border:1.5px solid var(--bone);background:transparent;color:var(--bone);cursor:pointer;transition:.18s;margin-top:8px;border-radius:3px}
+.obtn:hover{background:var(--bone);color:var(--ink)}
+
+
+/* ===== DESIGN SYSTEM V6 / TAILWIND + GLASS OPS ===== */
+:root{
+  --bg:#02050b;--panel:rgba(7,13,24,.78);--panel2:rgba(12,20,35,.88);--line:rgba(148,163,184,.14);
+  --cyan:#22d3ee;--blue:#38bdf8;--lime:#34d399;--gold:#fbbf24;--red:#fb4b64;--purple:#a78bfa;
+}
+body{background:radial-gradient(circle at 45% 45%,#0b2037 0,#03070e 44%,#010207 100%);letter-spacing:-.01em}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(circle at center,black,transparent 80%)}
+body:after{content:"";position:fixed;inset:0;z-index:100;pointer-events:none;opacity:.12;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E")}
+#app{left:72px;right:346px;width:auto;overflow:hidden}
+#app canvas{outline:none}
+
+/* INTRO */
+#intro{z-index:25;pointer-events:none;align-items:flex-start;padding:7vw 7vw 7vw 9vw;gap:34px;background:radial-gradient(circle at 65% 48%,rgba(20,74,115,.14),rgba(2,5,11,.86) 48%,#02050b 82%);pointer-events:auto}
+#intro.off{pointer-events:none}
+.introCard,.introSide{pointer-events:auto}.introCard{position:relative;width:min(550px,92vw);padding:34px 38px 36px;border:1px solid rgba(125,211,252,.18);border-radius:28px;background:linear-gradient(145deg,rgba(8,17,31,.88),rgba(3,8,16,.68));box-shadow:0 30px 100px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.05);overflow:visible}
+.introCard:after{content:"";position:absolute;inset:-1px;border-radius:28px;padding:1px;background:linear-gradient(145deg,rgba(34,211,238,.5),transparent 28%,transparent 70%,rgba(167,139,250,.35));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;pointer-events:none}
+.introEyebrow{display:flex;align-items:center;gap:9px;font:700 10px var(--mono);letter-spacing:.22em;color:#8da6c5;margin-bottom:27px}
+#intro h1{font-size:clamp(62px,7vw,100px);text-align:left;line-height:.78;letter-spacing:-.075em;text-shadow:0 8px 40px rgba(0,0,0,.55)}
+#intro h1 em{background:linear-gradient(90deg,#fbbf24,#fb7185);-webkit-background-clip:text;color:transparent}
+#intro p{text-align:left;max-width:440px;font-size:15px;color:#9cafc8;margin:23px 0 22px}
+.countrySearchWrap{height:54px;border:1px solid rgba(148,163,184,.17);border-radius:16px;display:flex;align-items:center;gap:10px;padding:0 16px;background:rgba(2,7,15,.78);position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.countrySearchWrap:focus-within{border-color:rgba(34,211,238,.55);box-shadow:0 0 0 4px rgba(34,211,238,.08)}
+.countrySearchWrap>span{font-size:23px;color:#61748f}.countrySearchWrap input{flex:1;background:transparent;border:0;outline:0;color:white;font-size:14px}.countrySearchWrap input::placeholder{color:#52637b}
+#countryResults{position:absolute;left:0;right:0;top:60px;z-index:80;display:none;background:rgba(5,11,20,.98);border:1px solid rgba(148,163,184,.18);border-radius:15px;box-shadow:0 20px 55px rgba(0,0,0,.5);padding:6px;max-height:240px;overflow:auto}
+#countryResults.on{display:block}.searchNation{display:flex;width:100%;align-items:center;gap:10px;padding:10px 12px;border:0;background:transparent;color:#dce8f8;border-radius:10px;cursor:pointer;text-align:left}.searchNation:hover{background:rgba(34,211,238,.08)}.searchNation span{font-size:22px}.searchNation small{margin-left:auto;color:#60728a;font:9px var(--mono);text-transform:uppercase}
+.quickCountries{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}.quickCountries button{border:1px solid rgba(148,163,184,.13);background:rgba(12,21,35,.66);color:#9eb0c7;padding:8px 11px;border-radius:10px;font-size:11px;cursor:pointer;transition:.2s}.quickCountries button:hover{color:#fff;border-color:rgba(34,211,238,.4);transform:translateY(-2px)}
+#hint{margin-top:18px;font-size:8px;animation:none;color:#52637b;letter-spacing:.18em}
+.introSide{display:flex;gap:9px;margin-left:8px}.introSide>div{width:130px;padding:15px 17px;border:1px solid rgba(148,163,184,.11);border-radius:16px;background:rgba(6,12,22,.55);display:flex;flex-direction:column}.introSide b{font:800 18px var(--mono);color:#d7e5f8}.introSide span{font-size:9px;color:#63758e;text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+
+/* LEFT RAIL */
+#leftRail{position:fixed;left:10px;top:10px;bottom:10px;width:56px;z-index:23;border:1px solid var(--line);border-radius:20px;background:rgba(4,9,17,.74);display:flex;flex-direction:column;align-items:center;padding:9px 7px;gap:7px;box-shadow:0 18px 60px rgba(0,0,0,.32)}
+.railBrand{height:51px;width:42px;border-radius:13px;background:linear-gradient(145deg,#fbbf24,#fb7185);color:#090b10;display:flex;align-items:center;justify-content:center;margin-bottom:7px;position:relative}.railBrand span{font:900 15px var(--mono)}.railBrand small{display:none}
+.railBtn{width:40px;height:40px;border:0;border-radius:12px;color:#60738e;background:transparent;font-size:19px;cursor:pointer;transition:.2s}.railBtn:hover,.railBtn.active{background:rgba(34,211,238,.1);color:#73e8f9;box-shadow:inset 0 0 0 1px rgba(34,211,238,.12)}.railSpacer{flex:1}
+
+/* TOP STATUS */
+#topBar{left:78px;right:362px;top:10px;height:62px;padding:8px 13px;border:1px solid var(--line);border-radius:18px;background:rgba(5,11,20,.72);backdrop-filter:blur(22px);box-shadow:0 18px 50px rgba(0,0,0,.25);pointer-events:auto;overflow:hidden}
+#playerFlag{font-size:31px;filter:drop-shadow(0 5px 12px rgba(0,0,0,.35))}#playerName{font-size:18px;margin:0 13px 0 10px;max-width:145px;overflow:hidden;text-overflow:ellipsis}
+#statRow{gap:5px}.sc{height:43px;padding:5px 8px;background:rgba(12,21,35,.62);border-color:rgba(148,163,184,.08);border-radius:11px}.sc .si{font-size:14px}.sc .sv{font-size:13px}.sc .sl{font-size:6.5px;color:#62738a}.pip{width:8px;height:8px;border-radius:2px;transform:rotate(45deg)}
+#worldStatus{position:fixed;left:50%;top:82px;transform:translateX(calc(-50% - 135px));z-index:12;width:245px;padding:10px 13px;border:1px solid var(--line);border-radius:15px;background:rgba(4,10,19,.7);box-shadow:0 14px 45px rgba(0,0,0,.28)}
+.statusLive{font:700 8px var(--mono);letter-spacing:.16em;color:#7890ad;display:flex;align-items:center;gap:7px}.liveDot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#fb4b64;box-shadow:0 0 0 5px rgba(251,75,100,.09),0 0 16px rgba(251,75,100,.75);animation:livePulse 1.5s ease-in-out infinite}@keyframes livePulse{50%{opacity:.35;transform:scale(.8)}}
+.tensionLabel{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:10px;color:#778aa5}.tensionLabel strong{font:800 11px var(--mono);color:#f9cf66}.tensionTrack{height:4px;border-radius:99px;background:rgba(255,255,255,.06);margin-top:5px;overflow:hidden}.tensionTrack div{height:100%;width:28%;border-radius:99px;background:linear-gradient(90deg,#34d399,#fbbf24,#fb4b64);transition:width .6s}.tensionTrack+div,#realClock{font:700 8px var(--mono);color:#51627a;margin-top:7px;text-align:right;letter-spacing:.09em}
+#clockBox{right:374px;top:20px;z-index:14}#dateStr{font-size:11px}#dayStr{font-size:7px}.spd{margin-top:4px;padding:2px;border-radius:8px}.spd button{height:21px;width:27px;border-radius:6px}
+
+/* FLAGS / GLOBE MARKERS */
+.nation-flag-marker{position:relative;border:0;background:transparent;cursor:pointer;pointer-events:auto;display:flex;align-items:center;gap:5px;color:#dceaff;filter:drop-shadow(0 4px 6px rgba(0,0,0,.85));transition:transform .18s,filter .18s;white-space:nowrap}
+.nation-flag-marker .flagOrb{display:flex;align-items:center;justify-content:center;width:26px;height:26px;font-size:19px;border-radius:50%;background:rgba(4,10,18,.87);border:1px solid rgba(125,211,252,.28);box-shadow:0 0 0 4px rgba(56,189,248,.04)}
+.nation-flag-marker .flagName{font:700 8px var(--mono);letter-spacing:.02em;opacity:0;transform:translateX(-5px);transition:.18s;padding:5px 7px;border-radius:7px;background:rgba(3,8,15,.88);border:1px solid rgba(148,163,184,.13)}
+.nation-flag-marker:hover,.nation-flag-marker.selected,.nation-flag-marker.player{z-index:8;filter:drop-shadow(0 0 12px rgba(34,211,238,.72))}.nation-flag-marker:hover .flagOrb,.nation-flag-marker.selected .flagOrb,.nation-flag-marker.player .flagOrb{transform:scale(1.16)}.nation-flag-marker:hover .flagName,.nation-flag-marker.selected .flagName{opacity:1;transform:none}.nation-flag-marker.player .flagOrb{border-color:#fbbf24;box-shadow:0 0 0 5px rgba(251,191,36,.11),0 0 22px rgba(251,191,36,.55)}.nation-flag-marker.enemy .flagOrb{border-color:#fb4b64;animation:enemyPulse 1.1s infinite}@keyframes enemyPulse{50%{box-shadow:0 0 0 9px rgba(251,75,100,0)}}
+.moving-unit{pointer-events:none;font-family:Arial,sans-serif;font-weight:900;line-height:1;filter:drop-shadow(0 0 5px currentColor) drop-shadow(0 4px 5px rgba(0,0,0,.9))}.moving-unit span{display:block;animation:unitBob .55s ease-in-out infinite alternate}.moving-unit.plane{filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 5px 5px rgba(0,0,0,.9))}.moving-unit.plane span{animation:planePulse .8s ease-in-out infinite alternate}.moving-unit.troop{border:1px solid currentColor;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;background:rgba(5,8,13,.84);font-size:8px!important}@keyframes unitBob{to{transform:translateY(-4px) scale(1.12)}}@keyframes planePulse{to{transform:scale(1.22) rotate(4deg)}}
+
+/* SOCIAL FEED */
+#feedShell{position:fixed;right:10px;top:10px;bottom:10px;width:336px;z-index:22;border:1px solid var(--line);border-radius:21px;background:rgba(4,9,17,.78);box-shadow:0 20px 70px rgba(0,0,0,.38);display:none;overflow:hidden;flex-direction:column}
+#feedShell.on{display:flex}#feedHead{height:105px;flex-shrink:0;padding:18px 17px 0;border-bottom:1px solid rgba(148,163,184,.1)}#feedHead>div:first-child{display:flex;align-items:center;gap:8px;font-size:15px}.verified{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#38bdf8;color:#04101a;font-size:9px}.feedTabs{display:flex;margin:14px -17px 0}.feedTabs button{flex:1;height:43px;border:0;background:transparent;color:#60728b;font:700 10px var(--sans);cursor:pointer;position:relative}.feedTabs button.active{color:#e8f2ff}.feedTabs button.active:after{content:"";height:3px;border-radius:3px;position:absolute;left:31%;right:31%;bottom:0;background:#38bdf8;box-shadow:0 0 15px rgba(56,189,248,.5)}
+#bulletin{position:relative;right:auto;top:auto;width:auto;display:flex!important;flex:1;max-height:none;overflow-y:auto;pointer-events:auto;gap:0;scrollbar-width:thin;scrollbar-color:#1d3047 transparent}
+.bitem{position:relative;border:0;border-bottom:1px solid rgba(148,163,184,.1);border-radius:0;padding:13px 14px;background:transparent;gap:10px;animation:tweetIn .4s cubic-bezier(.2,.8,.2,1);transition:background .2s,opacity .5s}.bitem:hover{background:rgba(255,255,255,.025)}@keyframes tweetIn{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+.bitem:before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--dim)}.bitem.good:before{background:var(--lime)}.bitem.bad:before{background:var(--red)}.bitem.warn:before{background:var(--gold)}.bitem.war:before{background:#ff6a2f}.bitem.act:before{background:var(--purple)}.bitem.ai-event:before{background:#38bdf8}
+.bico{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(145deg,rgba(21,35,57,.95),rgba(6,13,25,.95));border:1px solid rgba(148,163,184,.13);flex-shrink:0;margin:0}.btxt{font-size:11px;line-height:1.5;color:#98aac1;flex:1;min-width:0}.btxt strong{font-size:11.5px;color:#eef6ff;display:inline;margin:0 5px 0 0}.bhandle{font:8px var(--mono);color:#52657e}.bcopy{display:block;margin-top:4px}.btime{font-size:7px!important;margin-top:6px!important}.bactions{display:flex;justify-content:space-between;margin-top:9px;max-width:210px}.bactions button{border:0;background:transparent;color:#54677f;font:9px var(--mono);cursor:pointer;padding:2px 4px;border-radius:6px}.bactions button:hover{color:#6ee7f8;background:rgba(34,211,238,.08)}
+#feedCompose{height:58px;flex-shrink:0;border-top:1px solid rgba(148,163,184,.1);display:flex;align-items:center;gap:9px;padding:0 13px;color:#54677f;font-size:9px}#feedCompose span:first-child{font-size:19px}#feedCompose span:nth-child(2){flex:1}#feedCompose button{border:0;background:#e8f3ff;color:#07101a;font-weight:800;font-size:9px;border-radius:999px;padding:8px 12px;opacity:.38}
+
+/* ACTION DOCK */
+#actionBar{left:78px;right:362px;bottom:10px;padding:12px;border:1px solid var(--line);border-radius:20px;background:rgba(5,11,20,.78);backdrop-filter:blur(24px);box-shadow:0 22px 70px rgba(0,0,0,.42)}
+#ecoRow{margin-bottom:8px;gap:16px}.eco .el{font-size:7px}.eco .ev2{font-size:13px}#taxWrap{padding:5px 8px;border-radius:10px}#taxDisp{font-size:14px}.txb{width:22px;height:22px;border-radius:7px}
+#actionRow{gap:7px}.acard{min-width:73px;max-width:82px;padding:8px 8px 7px;border-radius:13px;background:linear-gradient(150deg,rgba(17,29,48,.91),rgba(7,14,26,.91));border:1px solid rgba(148,163,184,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}.acard:hover:not(.off){border-color:rgba(34,211,238,.4);background:rgba(17,35,51,.98);transform:translateY(-5px);box-shadow:0 13px 30px rgba(0,0,0,.3),0 0 20px rgba(34,211,238,.06)}.acard .ai{font-size:20px}.acard .at{font-size:8px}.acard .ac{font-size:7px}.acard .am{font-size:7px}.acard .cblk{border-radius:13px}
+#groupBar{left:88px;bottom:166px;padding:9px;border:1px solid var(--line);border-radius:15px;background:rgba(5,11,20,.7);backdrop-filter:blur(18px)}.grp{background:transparent;padding:4px 3px}.grp .gbar{width:58px}
+#relPanel{bottom:168px!important;border:1px solid var(--line)!important;border-radius:13px!important;background:rgba(5,11,20,.72)!important;backdrop-filter:blur(18px)}
+
+/* MISSIONS + TICKER */
+#missionPanel{position:fixed;left:88px;top:83px;width:218px;z-index:13;border:1px solid var(--line);border-radius:16px;background:rgba(4,10,19,.7);padding:12px;display:none;box-shadow:0 16px 45px rgba(0,0,0,.25)}#missionPanel.on{display:block}.missionTop{display:flex;justify-content:space-between;font:700 8px var(--mono);letter-spacing:.12em;color:#61748d;margin-bottom:10px}.missionTop b{color:#7de7f5}.missionItem{display:grid;grid-template-columns:18px 1fr auto;align-items:center;gap:7px;padding:7px 6px;border-radius:9px;color:#90a3ba;font-size:9px}.missionItem+.missionItem{border-top:1px solid rgba(148,163,184,.07)}.missionItem i{width:14px;height:14px;border:1px solid #31435b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:8px}.missionItem.done{color:#6ee7b7}.missionItem.done i{background:#34d399;color:#02110b;border-color:#34d399}.missionItem em{font:7px var(--mono);font-style:normal;color:#52657d}
+#worldTicker{position:fixed;left:318px;right:374px;bottom:163px;height:31px;z-index:11;border:1px solid var(--line);border-radius:11px;background:rgba(5,11,20,.72);display:none;align-items:center;overflow:hidden;backdrop-filter:blur(18px)}#worldTicker.on{display:flex}.tickerTag{height:100%;display:flex;align-items:center;padding:0 11px;background:#fb4b64;color:white;font:800 8px var(--mono);letter-spacing:.12em}.tickerTag:after{content:"";width:0;height:0;border-top:15px solid transparent;border-bottom:15px solid transparent;border-left:8px solid #fb4b64;position:absolute;margin-left:59px}#tickerText{font:700 9px var(--mono);letter-spacing:.04em;color:#9fb2c9;padding-left:20px;white-space:nowrap;animation:tickerSlide 14s linear infinite}@keyframes tickerSlide{from{transform:translateX(55%)}to{transform:translateX(-105%)}}
+#comboToast{position:fixed;left:50%;top:137px;transform:translateX(calc(-50% - 135px)) translateY(-10px);opacity:0;z-index:35;display:grid;grid-template-columns:auto auto;gap:1px 9px;align-items:center;padding:9px 13px;border-radius:13px;border:1px solid rgba(167,139,250,.25);background:rgba(15,10,31,.88);box-shadow:0 15px 50px rgba(0,0,0,.3),0 0 25px rgba(167,139,250,.12);transition:.25s;pointer-events:none}#comboToast.on{opacity:1;transform:translateX(calc(-50% - 135px)) translateY(0)}#comboToast small{grid-column:1/3;font:7px var(--mono);letter-spacing:.13em;color:#8172b1}#comboToast strong{font:900 20px var(--mono);color:#c4b5fd}#comboToast span{font-size:9px;color:#9a8fc1}
+
+/* WAR / DOSSIER / MODALS */
+#warHud{left:50%;transform:translateX(calc(-50% - 135px));top:166px;padding:12px 17px;border:1px solid rgba(251,75,100,.2);border-radius:16px;background:rgba(18,7,12,.77);backdrop-filter:blur(17px);box-shadow:0 15px 55px rgba(0,0,0,.35)}
+#dossier{width:360px;padding:27px 23px;background:rgba(4,9,17,.96);border-left:1px solid rgba(125,211,252,.15);box-shadow:-25px 0 90px rgba(0,0,0,.52)}#dFlag2{font-size:54px}#dCountry{font-size:25px}.ds{border-radius:12px;background:rgba(12,21,35,.72);padding:10px}.dbtn{border-radius:11px;padding:12px}
+#popup{background:rgba(1,4,9,.78);backdrop-filter:blur(15px)}.pbox{max-width:560px;padding:31px;border-radius:24px;background:linear-gradient(145deg,rgba(13,23,39,.98),rgba(5,11,20,.98));box-shadow:0 35px 110px rgba(0,0,0,.58);border-color:rgba(125,211,252,.16)}.popt{border-radius:12px;background:rgba(17,29,47,.72)}
+#hl{top:86px;border-radius:99px;box-shadow:0 13px 45px rgba(0,0,0,.35)}#aiLoader{bottom:206px;border-radius:99px}
+#over{background:radial-gradient(circle at center,rgba(11,29,47,.96),#02050b 70%)}
+
+@media(max-width:1050px){#feedShell{width:290px}#app{right:300px}#topBar,#actionBar{right:312px}#clockBox{right:323px}#worldStatus,#warHud,#comboToast{transform:translateX(calc(-50% - 108px))}#worldTicker{right:324px}.sc:nth-child(n+6){display:none}}
+@media(max-width:820px){#leftRail{display:none}#app{left:0;right:0}#feedShell{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:42vh;z-index:40}#feedHead{height:76px;padding-top:11px}.feedTabs{margin-top:6px}#topBar{left:8px;right:8px;top:8px}.sc:nth-child(n+4){display:none}#clockBox{display:none!important}#worldStatus{display:none}#actionBar{left:8px;right:8px;bottom:calc(42vh + 16px);padding:8px}#ecoRow{display:none}#groupBar,#missionPanel,#worldTicker{display:none!important}#warHud{top:82px;transform:translateX(-50%)}#intro{padding:20px;justify-content:center}.introSide{display:none}.introCard{padding:26px 22px}#intro h1{font-size:57px}#dossier{width:min(360px,100vw)}}
+
+</style>
+
+<div id="app"></div>
+<div id="tip"></div>
+
+<div id="intro">
+  <div class="introCard backdrop-blur-3xl">
+    <div class="introEyebrow"><span class="liveDot"></span> SIMULAÇÃO GEOPOLÍTICA EM TEMPO REAL</div>
+    <h1>ESTADO<br><em>MAIOR</em></h1>
+    <p>Comande uma nação, reaja ao mundo e transforme cada decisão em uma manchete global.</p>
+    <div class="countrySearchWrap">
+      <span>⌕</span><input id="countrySearch" autocomplete="off" placeholder="Buscar uma nação...">
+      <div id="countryResults"></div>
+    </div>
+    <div class="quickCountries">
+      <button data-country="Brasil">🇧🇷 Brasil</button><button data-country="Estados Unidos">🇺🇸 EUA</button>
+      <button data-country="China">🇨🇳 China</button><button data-country="Rússia">🇷🇺 Rússia</button>
+    </div>
+    <div id="hint">ARRASTE PARA GIRAR · SCROLL PARA APROXIMAR · CLIQUE NUMA BANDEIRA</div>
+  </div>
+  <div class="introSide">
+    <div><b>45</b><span>nações jogáveis</span></div><div><b>4 anos</b><span>de mandato</span></div><div><b>∞</b><span>cenários emergentes</span></div>
+  </div>
+</div>
+
+<div id="topBar">
+  <div id="playerFlag">🌐</div>
+  <div id="playerName">—</div>
+  <div id="statRow"></div>
+  <div id="cpBar"></div>
+</div>
+<div id="clockBox">
+  <div id="dateStr">—</div>
+  <div id="dayStr">dia 1 de 1460</div>
+  <div class="spd">
+    <button data-s="0">⏸</button><button data-s="1" class="act">1×</button>
+    <button data-s="3">3×</button><button data-s="8">8×</button>
+  </div>
+</div>
+
+<aside id="feedShell" class="backdrop-blur-2xl">
+  <div id="feedHead">
+    <div><span class="liveDot"></span><strong>Radar global</strong><span class="verified">✓</span></div>
+    <div class="feedTabs"><button class="active">Para você</button><button>Inteligência</button></div>
+  </div>
+  <div id="bulletin"></div>
+  <div id="feedCompose"><span id="composeFlag">🌐</span><span>O que está acontecendo no mundo?</span><button>Publicar</button></div>
+</aside>
+<div id="aiLoader">✦ <span>.</span><span>.</span><span>.</span> Central de inteligência</div>
+
+<nav id="leftRail" class="backdrop-blur-2xl">
+  <div class="railBrand"><span>EM</span><small>ESTADO<br>MAIOR</small></div>
+  <button class="railBtn active" title="Mapa mundial">◎</button>
+  <button class="railBtn" title="Radar global">⌁</button>
+  <button class="railBtn" title="Diplomacia">◇</button>
+  <button class="railBtn" title="Defesa">△</button>
+  <div class="railSpacer"></div>
+  <button class="railBtn" title="Configurações">⚙</button>
+</nav>
+
+<section id="worldStatus" class="backdrop-blur-2xl">
+  <div class="statusLive"><span class="liveDot"></span> MUNDO AO VIVO</div>
+  <div class="tensionLabel"><span>Tensão global</span><strong id="tensionValue">28%</strong></div>
+  <div class="tensionTrack"><div id="tensionFill"></div></div>
+  <div id="realClock">--:--:-- BRT</div>
+</section>
+
+<section id="missionPanel" class="backdrop-blur-2xl">
+  <div class="missionTop"><span>OBJETIVOS DO MANDATO</span><b id="missionCount">0/3</b></div>
+  <div id="missionList"></div>
+</section>
+
+<div id="comboToast"><small>SEQUÊNCIA POLÍTICA</small><strong id="comboValue">x1</strong><span id="comboText">Momentum em alta</span></div>
+<div id="worldTicker"><span class="tickerTag">BREAKING</span><div id="tickerText">Escolha uma nação e assuma o comando.</div></div>
+
+<div id="groupBar">
+  <div class="grp"><div class="gi">💼</div><div class="gbar"><div class="gfill" id="g_emp"></div></div><div class="gv" id="gv_emp">—</div></div>
+  <div class="grp"><div class="gi">⚔️</div><div class="gbar"><div class="gfill" id="g_mil"></div></div><div class="gv" id="gv_mil">—</div></div>
+  <div class="grp"><div class="gi">✊</div><div class="gbar"><div class="gfill" id="g_sind"></div></div><div class="gv" id="gv_sind">—</div></div>
+  <div class="grp"><div class="gi">🩺</div><div class="gbar"><div class="gfill" id="g_sau"></div></div><div class="gv" id="gv_sau">—</div></div>
+  <div class="grp"><div class="gi">🎓</div><div class="gbar"><div class="gfill" id="g_uni"></div></div><div class="gv" id="gv_uni">—</div></div>
+</div>
+
+<div id="warHud">
+  <div id="warTitle">⚔️ CONFLITO ATIVO</div>
+  <div id="warBattle">
+    <div class="wside"><div class="wf" id="wFlagL">🌐</div><div class="wn" id="wNameL">—</div><div class="ws" id="wStrL" style="color:var(--teal)">—</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div class="wvs">VS</div>
+      <div id="warTrack"><div id="wBarL" style="width:50%"></div><div id="wBarR" style="width:50%"></div></div>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--dim)" id="warDays">dia 0</div>
+    </div>
+    <div class="wside"><div class="wf" id="wFlagR">🌐</div><div class="wn" id="wNameR">—</div><div class="ws" id="wStrR" style="color:var(--rose)">—</div></div>
+  </div>
+</div>
+
+<div id="actionBar">
+  <div id="ecoRow">
+    <div class="eco"><span class="el">💰 Caixa</span><span class="ev2" id="eCash">—</span></div>
+    <div class="eco"><span class="el">📈 Fluxo/ano</span><span class="ev2" id="eFlow">—</span></div>
+    <div class="eco"><span class="el">🏦 Dívida/PIB</span><span class="ev2" id="eDebt">—</span></div>
+    <div id="taxWrap">
+      <span class="tl">💸 Imposto</span>
+      <button class="txb" id="txDown">−</button>
+      <div><div id="taxDisp">—</div><div id="taxLbl">—</div></div>
+      <button class="txb" id="txUp">+</button>
+    </div>
+  </div>
+  <div id="actionRow"></div>
+</div>
+
+<div id="dossier">
+  <button id="dClose">✕</button>
+  <div id="dFlag2">🌐</div><div id="dCountry">—</div><div id="dSub">—</div>
+  <div id="dTrait">—</div>
+  <div class="dstats" id="dStats"></div>
+  <div id="dBtns"></div>
+</div>
+
+<div id="hl"></div>
+
+<div id="popup"><div class="pbox">
+  <div class="pi" id="pIco">⚡</div>
+  <h3 id="pTitle">—</h3>
+  <p class="pdesc" id="pDesc">—</p>
+  <div class="pchoices" id="pChoices"></div>
+</div></div>
+
+<div id="over">
+  <div style="font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)">Fim de mandato</div>
+  <h2 id="oTitle">—</h2><p id="oText"></p>
+  <div id="oGrid"></div>
+  <button class="obtn" onclick="location.reload()">Nova partida</button>
+</div>
+
+<script>
+/* ===== UTILS ===== */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const $=id=>document.getElementById(id);
+const money=v=>{const a=Math.abs(v),s=v<0?'−':'';return a>=1000?`${s}$${(a/1e3).toFixed(1)}T`:`${s}$${Math.round(a)}B`;}
+const MESES=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const dataStr=d=>{const b=new Date(2027,0,1);b.setDate(b.getDate()+d);return `${String(b.getDate()).padStart(2,'0')} ${MESES[b.getMonth()]} ${b.getFullYear()}`;};
+
+const FLAGS={"Brasil":"🇧🇷","Argentina":"🇦🇷","Chile":"🇨🇱","Colômbia":"🇨🇴","Peru":"🇵🇪","Venezuela":"🇻🇪","México":"🇲🇽","Estados Unidos":"🇺🇸","Canadá":"🇨🇦","Cuba":"🇨🇺","Reino Unido":"🇬🇧","França":"🇫🇷","Alemanha":"🇩🇪","Espanha":"🇪🇸","Itália":"🇮🇹","Portugal":"🇵🇹","Polônia":"🇵🇱","Ucrânia":"🇺🇦","Rússia":"🇷🇺","Turquia":"🇹🇷","Suécia":"🇸🇪","Noruega":"🇳🇴","Egito":"🇪🇬","Nigéria":"🇳🇬","África do Sul":"🇿🇦","Etiópia":"🇪🇹","Quênia":"🇰🇪","Marrocos":"🇲🇦","Argélia":"🇩🇿","Israel":"🇮🇱","Arábia Saudita":"🇸🇦","Irã":"🇮🇷","Emirados Árabes":"🇦🇪","Índia":"🇮🇳","Paquistão":"🇵🇰","China":"🇨🇳","Japão":"🇯🇵","Coreia do Sul":"🇰🇷","Coreia do Norte":"🇰🇵","Indonésia":"🇮🇩","Vietnã":"🇻🇳","Tailândia":"🇹🇭","Cazaquistão":"🇰🇿","Austrália":"🇦🇺","Nova Zelândia":"🇳🇿"};
+const flag=n=>FLAGS[n]||'🌐';
+
+const LIDERES={"Brasil":{cargo:"Presidente",trait:"🦜 Jeitinho — diplomacia custa −1 CP",bonus:n=>{n._dCp=-1}},"Estados Unidos":{cargo:"President",trait:"🦅 Superpotência — militar começa em 95",bonus:n=>{n.mil=95;n._milBonus=5}},"China":{cargo:"Presidente",trait:"🐉 Partido único — Congresso alto, legitimidade drena mais rápido",bonus:n=>{n._congBonus=30;n._legitDrain=.04}},"Rússia":{cargo:"Presidente",trait:"🐻 Estado forte — Exceção não custa Legitimidade",bonus:n=>{n._excecaoFree=true}},"Alemanha":{cargo:"Chanceler",trait:"🦁 Rigor fiscal — dívida acumula 40% mais devagar",bonus:n=>{n._debtMult=.6}},"França":{cargo:"Président",trait:"🐓 Grandeza — diplomacia dá +2 aprovação extra",bonus:n=>{n._cultBonus=2}},"Japão":{cargo:"Primeiro-Ministro",trait:"⛩️ Consenso — saúde e ciência custam 0 CP",bonus:n=>{n._freeSci=true}},"Israel":{cargo:"Primeiro-Ministro",trait:"🔰 Ferro — militar começa em 90, guerra custa menos",bonus:n=>{n.mil=90;n._warDiscount=.7}},"Argentina":{cargo:"Presidente",trait:"📉 Herança pesada — dívida começa em 90% do PIB, mas população é criativa",bonus:n=>{n.divida=n.pib*.9;n.ciencia+=8;}},"Coreia do Norte":{cargo:"Supremo Líder",trait:"☢️ Juche — sem oposição, sem imprensa, mas isolamento drena diplomacia",bonus:n=>{n.congresso=98;n.oposicao=0;n.diplo=10;}}};
+const getLider=n=>LIDERES[n]||{cargo:"Presidente",trait:"Líder neutro. Sem bônus especial.",bonus:()=>{}};
+
+/* ===== NAÇÕES ===== */
+const RAW=[["Brasil","América do Sul",-15.8,-47.9,216,2170,55],["Argentina","América do Sul",-34.6,-58.4,46,640,42],["Chile","América do Sul",-33.4,-70.6,20,335,38],["Colômbia","América do Sul",4.7,-74.1,52,360,44],["Peru","América do Sul",-12.0,-77.0,34,270,35],["Venezuela","América do Sul",10.5,-66.9,28,100,40],["México","América do Norte",19.4,-99.1,128,1790,48],["Estados Unidos","América do Norte",38.9,-77.0,335,27000,100],["Canadá","América do Norte",45.4,-75.7,40,2140,52],["Cuba","Caribe",23.1,-82.4,11,107,30],["Reino Unido","Europa",51.5,-0.13,68,3340,78],["França","Europa",48.9,2.35,68,3050,80],["Alemanha","Europa",52.5,13.4,84,4460,66],["Espanha","Europa",40.4,-3.7,48,1580,54],["Itália","Europa",41.9,12.5,59,2250,60],["Portugal","Europa",38.7,-9.14,10,290,34],["Polônia","Europa",52.2,21.0,37,810,58],["Ucrânia","Europa",50.4,30.5,38,180,62],["Rússia","Eurásia",55.75,37.6,144,2020,95],["Turquia","Eurásia",39.9,32.85,85,1130,70],["Suécia","Europa",59.3,18.1,10,590,45],["Noruega","Europa",59.9,10.75,5.5,490,42],["Egito","África",30.0,31.2,110,400,60],["Nigéria","África",9.07,7.4,220,470,45],["África do Sul","África",-25.7,28.2,60,400,45],["Etiópia","África",9.0,38.7,120,160,40],["Quênia","África",-1.29,36.8,55,115,32],["Marrocos","África",34.0,-6.8,37,140,40],["Argélia","África",36.75,3.06,45,240,50],["Israel","Oriente Médio",31.8,35.2,9.5,520,75],["Arábia Saudita","Oriente Médio",24.7,46.7,36,1070,68],["Irã","Oriente Médio",35.7,51.4,88,400,65],["Emirados Árabes","Oriente Médio",24.45,54.4,10,500,50],["Índia","Ásia",28.6,77.2,1430,3730,85],["Paquistão","Ásia",33.7,73.0,240,340,68],["China","Ásia",39.9,116.4,1420,17700,98],["Japão","Ásia",35.7,139.7,124,4210,64],["Coreia do Sul","Ásia",37.6,127.0,52,1710,72],["Coreia do Norte","Ásia",39.03,125.75,26,28,60],["Indonésia","Ásia",-6.2,106.8,277,1370,50],["Vietnã","Ásia",21.03,105.85,99,430,52],["Tailândia","Ásia",13.75,100.5,72,510,48],["Cazaquistão","Eurásia",51.16,71.47,20,260,40],["Austrália","Oceania",-35.3,149.1,26,1690,55],["Nova Zelândia","Oceania",-41.3,174.8,5,250,28]];
+const NATIONS=RAW.map(([nome,regiao,lat,lng,pop,pib,mil])=>{const pc=(pib*1e9)/(pop*1e6);
+  return{nome,regiao,lat,lng,pop,pib,pib0:pib,mil,pc,
+    aprovacao:46+Math.random()*20,estabilidade:clamp(28+Math.log10(pc)*14+Math.random()*10,20,92),
+    saude:clamp(16+Math.log10(pc)*18,16,92),ciencia:clamp(8+Math.log10(pc)*19+(pib>2000?10:0),10,96),
+    diplo:clamp(24+Math.log10(pib)*12,16,92),legitimidade:70+Math.random()*22,corrupcao:clamp(80-Math.log10(pc)*14,8,75),
+    caixa:pib*.055,divida:pib*(.22+Math.random()*.48),
+    grupos:{emp:50+Math.random()*20,mil:50+Math.random()*20,sind:40+Math.random()*20,sau:50+Math.random()*20,uni:50+Math.random()*20},
+    congresso:38+Math.random()*28,oposicao:12+Math.random()*10,
+    emGuerra:false,warTarget:null,warDias:0,warStrength:100,sancoes:0,
+    aliados:[],       // nações aliadas militares
+    colonias:[],      // nações colonizadas (drenam PIB todo mês)
+    acordos:[],       // acordos comerciais ativos [{nacao, bonus, meses}]
+    territorios:0,    // territórios anexados (boost militar e PIB)
+    resistenciaInterna:0, // cresce com colônias e exceção, provoca instabilidade
+    _dCp:0,_milBonus:0,_congBonus:0,_legitDrain:.01,_excecaoFree:false,
+    _freeSci:false,_eventDamp:1,_corrDrain:0,_taxImune:false,_cultBonus:0,_debtMult:1,_warDiscount:1};
+});
+const distKm=(a,b)=>{const t=x=>x*Math.PI/180,dA=t(b.lat-a.lat),dO=t(b.lng-a.lng),h=Math.sin(dA/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(dO/2)**2;return 12742*Math.asin(Math.sqrt(h));};
+NATIONS.forEach(n=>{n.vizinhos=NATIONS.filter(o=>o!==n).sort((a,b)=>distKm(n,a)-distKm(n,b)).slice(0,5);});
+
+/* ===== ESTADO ===== */
+let PLAYER=null,dia=0,speed=1,playing=false,acc=0,selN=null;
+const DIAS=1460;let cp=2,CP_MAX=6,cpAcc=0;
+const TAXAS=[{v:.10,l:'Mínima'},{v:.15,l:'Liberal'},{v:.20,l:'Equilibrada'},{v:.27,l:'Pesada'},{v:.34,l:'Confisco'}];
+let taxIdx=2;const GASTO=.188,JURO=.055;const CD={};let efeitos=[],prevStats={},avisos={div:false,caixa:false};
+let prox=22+Math.floor(Math.random()*10),escTimer=70+Math.floor(Math.random()*60),opTimer=90+Math.floor(Math.random()*50);
+let aiPending=false,aiQueue=[],lastAiDia=-999;
+
+/* ===== GLOBO.GL — TERRA REAL, BANDEIRAS, ROTAS E UNIDADES ===== */
+const GLOBE_TEXTURE='https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg';
+const GLOBE_BUMP='https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png';
+const nationMarkers=NATIONS.map(n=>({type:'nation',n,lat:n.lat,lng:n.lng}));
+let routeArcs=[],warArcs=[],ambientArcs=[],mobileUnits=[],impactRings=[];
+let globeRefreshQueued=false,unitFrame=0;
+
+const hexCss=v=>typeof v==='number'?'#'+v.toString(16).padStart(6,'0'):String(v);
+NATIONS.forEach(n=>{
+  n._visualColor='#4a90d0';
+  n.mesh={material:{color:{set:v=>{n._visualColor=hexCss(v);queueGlobeRefresh();}}},scale:{multiplyScalar:()=>{}}};
+  n.halo={material:{opacity:0}};
+});
+
+function nationColor(n){
+  if(PLAYER?.emGuerra&&(n===PLAYER||n===PLAYER.warTarget))return n===PLAYER?'#ff7a30':'#fb4b64';
+  if(PLAYER&&n===PLAYER)return '#fbbf24';
+  if(PLAYER?.aliados?.some(a=>a.nome===n.nome))return '#34d399';
+  if(PLAYER?.colonias?.some(c=>c.n.nome===n.nome))return '#a78bfa';
+  if(PLAYER?.acordos?.some(a=>a.nacao===n.nome))return '#38bdf8';
+  if(selN===n)return '#e2e8f0';
+  return n._visualColor||'#4a90d0';
+}
+function nationPointLabel(n){
+  const rel=typeof relacaoStatus==='function'?relacaoStatus(n):'neutro';
+  return `<div style="font-family:Inter,system-ui;background:rgba(3,8,15,.95);border:1px solid rgba(125,211,252,.25);padding:10px 12px;border-radius:12px;color:#dcecff;box-shadow:0 18px 45px rgba(0,0,0,.45)"><b>${flag(n.nome)} ${n.nome}</b><br><span style="font-size:10px;color:#7e91aa">${n.regiao} · PIB ${money(n.pib)} · Militar ${Math.round(n.mil)}</span><br><span style="font-size:9px;color:#38bdf8">${rel||'selecione para governar'}</span></div>`;
+}
+function createGlobeMarker(d){
+  if(d.type==='nation'){
+    const el=document.createElement('button'),n=d.n;
+    el.className='nation-flag-marker';
+    el.innerHTML=`<span class="flagOrb">${flag(n.nome)}</span><span class="flagName">${n.nome}</span>`;
+    el.title=n.nome;el.onclick=e=>{e.stopPropagation();openDossier(n);};
+    el.onmouseenter=()=>el.classList.add('selected');el.onmouseleave=()=>{if(selN!==n)el.classList.remove('selected');};
+    d._el=el;return el;
+  }
+  const el=document.createElement('div');
+  el.className=`moving-unit ${d.kind||'troop'}`;el.innerHTML=`<span>${d.icon||'●'}</span>`;el.style.color=d.color||'#fff';el.style.fontSize=`${Math.max(12,(d.size||1)*18)}px`;d._el=el;return el;
+}
+
+const World=new Globe($('app'))
+  .width(Math.max(320,innerWidth-418)).height(innerHeight)
+  .backgroundColor('rgba(0,0,0,0)')
+  .globeImageUrl(GLOBE_TEXTURE).bumpImageUrl(GLOBE_BUMP)
+  .showAtmosphere(true).atmosphereColor('#38bdf8').atmosphereAltitude(.18)
+  .showGraticules(true)
+  .pointsData(NATIONS)
+  .pointLat('lat').pointLng('lng')
+  .pointRadius(n=>PLAYER===n?.38:selN===n?.32:.18)
+  .pointAltitude(n=>PLAYER===n?.045:selN===n?.032:.018)
+  .pointColor(n=>nationColor(n))
+  .pointLabel(n=>nationPointLabel(n))
+  .pointsTransitionDuration(450)
+  .onPointClick(n=>openDossier(n))
+  .htmlElementsData(nationMarkers)
+  .htmlLat('lat').htmlLng('lng').htmlAltitude(d=>d.type==='nation'?.045:(d.alt||.03))
+  .htmlElement(createGlobeMarker).htmlTransitionDuration(0)
+  .arcsData([])
+  .arcStartLat('startLat').arcStartLng('startLng').arcEndLat('endLat').arcEndLng('endLng')
+  .arcColor(d=>d.colors||d.color||'#38bdf8')
+  .arcAltitude(d=>d.altitude??.18).arcStroke(d=>d.stroke??.25)
+  .arcDashLength(d=>d.dashLength??.42).arcDashGap(d=>d.dashGap??.18)
+  .arcDashAnimateTime(d=>d.animate??2600).arcsTransitionDuration(500)
+  .ringsData([]).ringLat('lat').ringLng('lng').ringAltitude(.012)
+  .ringColor(d=>t=>`rgba(${d.rgb||'251,75,100'},${1-t})`).ringMaxRadius(d=>d.radius||5)
+  .ringPropagationSpeed(d=>d.speed||2.5).ringRepeatPeriod(d=>d.repeat||900);
+
+World.controls().autoRotate=true;World.controls().autoRotateSpeed=.32;World.controls().enablePan=false;
+World.controls().minDistance=145;World.controls().maxDistance=520;
+World.pointOfView({lat:12,lng:-18,altitude:2.25},0);
+try{World.renderer().setPixelRatio(Math.min(devicePixelRatio,1.8));}catch(e){}
+
+function queueGlobeRefresh(){if(globeRefreshQueued)return;globeRefreshQueued=true;requestAnimationFrame(()=>{globeRefreshQueued=false;refreshGlobeLayers();});}
+function refreshGlobeLayers(){
+  World.pointsData([...NATIONS]);
+  World.arcsData([...ambientArcs,...routeArcs,...warArcs]);
+  World.ringsData([...impactRings]);
+  World.htmlElementsData([...nationMarkers,...mobileUnits]);
+  nationMarkers.forEach(d=>{if(!d._el)return;d._el.classList.toggle('player',PLAYER===d.n);d._el.classList.toggle('selected',selN===d.n);d._el.classList.toggle('enemy',!!(PLAYER?.emGuerra&&PLAYER.warTarget===d.n));});
+}
+function drawRoutes(n){
+  routeArcs=n?n.vizinhos.map((v,i)=>({startLat:n.lat,startLng:n.lng,endLat:v.lat,endLng:v.lng,colors:['rgba(251,191,36,.15)','#fbbf24'],altitude:.11+i*.012,stroke:.18,dashLength:.2,dashGap:.15,animate:2400+i*220,type:'route'})):[];
+  queueGlobeRefresh();
+}
+function drawWarArc(a,b){
+  warArcs=a&&b?[{startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:['#ff7a30','#fb4b64'],altitude:.27,stroke:.42,dashLength:.22,dashGap:.09,animate:950,type:'war'},{startLat:b.lat,startLng:b.lng,endLat:a.lat,endLng:a.lng,colors:['rgba(251,75,100,.08)','#fb4b64'],altitude:.20,stroke:.14,dashLength:.08,dashGap:.16,animate:1500,type:'war'}]:[];
+  impactRings=a&&b?[{lat:a.lat,lng:a.lng,rgb:'255,122,48',radius:4.5,speed:2.8,repeat:720},{lat:b.lat,lng:b.lng,rgb:'251,75,100',radius:5.5,speed:3.2,repeat:650}]:[];
+  queueGlobeRefresh();
+}
+function shortestLng(a,b,t){let d=((b-a+540)%360)-180;return a+d*t;}
+function moveUnit(u){
+  u.t=(u.t+u.speed*(speed||.25))%1;
+  const e=u.t<.5?2*u.t*u.t:1-Math.pow(-2*u.t+2,2)/2;
+  u.lat=u.from.lat+(u.to.lat-u.from.lat)*e;
+  u.lng=shortestLng(u.from.lng,u.to.lng,e);
+  u.alt=(u.baseAlt||.025)+Math.sin(Math.PI*e)*(u.arcAlt||.02);
+}
+function spawnAmbientFlights(){
+  if(mobileUnits.some(u=>u.scope==='ambient'))return;
+  for(let i=0;i<7;i++){
+    const a=NATIONS[Math.floor(Math.random()*NATIONS.length)],b=NATIONS[Math.floor(Math.random()*NATIONS.length)];
+    if(a===b){i--;continue;}
+    mobileUnits.push({scope:'ambient',kind:'plane',icon:'✈',color:'rgba(125,211,252,.9)',size:.72,from:a,to:b,t:Math.random(),speed:.00042+Math.random()*.00025,baseAlt:.07,arcAlt:.12,lat:a.lat,lng:a.lng});
+    ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:['rgba(56,189,248,.03)','rgba(56,189,248,.25)'],altitude:.13,stroke:.08,dashLength:.08,dashGap:.22,animate:4200+Math.random()*1800,type:'flight'});
+  }
+  queueGlobeRefresh();
+}
+function spawnWarUnits(a,b){
+  clearWarUnits();
+  for(let i=0;i<10;i++)mobileUnits.push({scope:'war',kind:'troop',icon:i%3===0?'◆':'●',color:i<7?'#ff7a30':'#fb4b64',size:i%3===0?.85:.55,from:i<7?a:b,to:i<7?b:a,t:Math.random(),speed:.00072+Math.random()*.00045,baseAlt:.018,arcAlt:.018,lat:a.lat,lng:a.lng});
+  for(let i=0;i<4;i++)mobileUnits.push({scope:'war',kind:'plane',icon:'✈',color:i<3?'#ffd39b':'#ff9aac',size:.95,from:i<3?a:b,to:i<3?b:a,t:Math.random(),speed:.0009+Math.random()*.0004,baseAlt:.08,arcAlt:.18,lat:a.lat,lng:a.lng});
+  queueGlobeRefresh();
+}
+function clearWarUnits(){mobileUnits=mobileUnits.filter(u=>u.scope!=='war');queueGlobeRefresh();}
+function updateWarUnits(now=performance.now()){
+  mobileUnits.forEach(moveUnit);
+  if(now-unitFrame>58){unitFrame=now;World.htmlElementsData([...nationMarkers,...mobileUnits]);}
+}
+function focusNation(n,altitude=1.65){World.pointOfView({lat:n.lat,lng:n.lng,altitude},900);}
+function pulseImpact(n,rgb='251,75,100'){impactRings=[...impactRings.slice(-3),{lat:n.lat,lng:n.lng,rgb,radius:7,speed:4,repeat:700,_until:Date.now()+4200}];queueGlobeRefresh();setTimeout(()=>{impactRings=impactRings.filter(r=>!r._until||r._until>Date.now());queueGlobeRefresh();},4400);}
+
+const cv=$('app');
+
+/* ===== ESTADO (declarado antes do globo) ===== */
+
+/* ===== MOTOR NARRATIVO HÍBRIDO — LOCAL + ENDPOINT OPCIONAL ===== */
+const NARRATIVE_ENDPOINT=window.ESTADO_MAIOR_NARRATIVE_ENDPOINT||'';
+const LOCAL_EVENTS={
+  evento:[
+    ['📦','Portos sob pressão','Exportadores cobram reação após atrasos logísticos.',{aprovacao:-2,estabilidade:-1,legitimidade:0,caixa_pct:-.004}],
+    ['⚡','Rede elétrica no limite','Pico de consumo força plano emergencial de energia.',{aprovacao:-3,estabilidade:-2,legitimidade:0,caixa_pct:-.006}],
+    ['📈','Indústria acelera','Novas encomendas elevam a confiança empresarial.',{aprovacao:3,estabilidade:2,legitimidade:1,caixa_pct:.006}],
+    ['🌾','Safra surpreende','Produção agrícola supera estimativas e reduz preços.',{aprovacao:4,estabilidade:2,legitimidade:1,caixa_pct:.004}],
+    ['🛰️','Alerta de inteligência','Movimentação incomum é detectada perto das fronteiras.',{aprovacao:-1,estabilidade:-3,legitimidade:0,caixa_pct:0}]
+  ],
+  escandalo:[
+    ['🧾','Contratos sob suspeita','Auditoria aponta sobrepreço em contratos estratégicos.'],
+    ['📱','Áudios vazados','Conversas internas do gabinete dominam as redes.'],
+    ['💼','Lobby no palácio','Empresários teriam influenciado uma decisão ministerial.']
+  ],
+  crise:[
+    ['🚧','Greve nacional','Transportes param e cadeias de abastecimento entram em alerta.'],
+    ['🏦','Pressão cambial','Mercado testa a capacidade de reação do governo.'],
+    ['🔥','Confrontos nas ruas','Protestos avançam e exigem uma resposta imediata.']
+  ],
+  conquista:[
+    ['🏆','Acordo histórico','Negociação internacional abre um novo mercado para o país.',{aprovacao:5,estabilidade:2,legitimidade:3,caixa_pct:.008}],
+    ['🔬','Avanço científico','Pesquisadores nacionais anunciam descoberta de impacto global.',{aprovacao:4,estabilidade:1,legitimidade:3,caixa_pct:0}],
+    ['🏗️','Obra entregue','Projeto estratégico é concluído antes do prazo.',{aprovacao:5,estabilidade:3,legitimidade:2,caixa_pct:-.002}]
+  ]
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function gerarEventoLocal(tipo='evento'){
+  const item=pick(LOCAL_EVENTS[tipo]||LOCAL_EVENTS.evento),base=item[3]||{aprovacao:-2,estabilidade:-2,legitimidade:-1,caixa_pct:0};
+  const ev={tipo,emoji:item[0],titulo:item[1],descricao:`${item[2]} ${PLAYER?`Em ${PLAYER.nome}, a reação é imediata.`:''}`,impacto:{...base},escolhas:[]};
+  if(tipo==='escandalo')ev.escolhas=[
+    {texto:'Abrir investigação independente',efeito_desc:'Transparência acalma as ruas',impacto:{aprovacao:3,estabilidade:2,legitimidade:7}},
+    {texto:'Blindar o gabinete',efeito_desc:'Base se une, opinião reage',impacto:{aprovacao:-5,estabilidade:1,legitimidade:-8}},
+    {texto:'Demitir os envolvidos',efeito_desc:'Resposta rápida, custo político',impacto:{aprovacao:5,estabilidade:-1,legitimidade:4}}
+  ];
+  if(tipo==='crise')ev.escolhas=[
+    {texto:'Negociar e ceder',efeito_desc:'Crise esfria, caixa sofre',impacto:{aprovacao:4,estabilidade:6,legitimidade:2}},
+    {texto:'Impor autoridade',efeito_desc:'Ordem imediata, tensão cresce',impacto:{aprovacao:-4,estabilidade:2,legitimidade:-6}}
+  ];
+  return ev;
+}
+async function callNarrative(payload,timeout=5000){
+  if(!NARRATIVE_ENDPOINT)throw new Error('endpoint não configurado');
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeout);
+  try{const res=await fetch(NARRATIVE_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctrl.signal});if(!res.ok)throw new Error('narrativa indisponível');return await res.json();}
+  finally{clearTimeout(timer);}
+}
+async function gerarEventoIA(tipo){
+  if(aiPending||!PLAYER)return;if(dia-lastAiDia<22)return;
+  aiPending=true;lastAiDia=dia;$('aiLoader').classList.add('on');
+  try{const json=await callNarrative({mode:'event',tipo,country:PLAYER.nome,day:dia,state:{aprovacao:PLAYER.aprovacao,estabilidade:PLAYER.estabilidade,legitimidade:PLAYER.legitimidade,pib:PLAYER.pib,divida:PLAYER.divida,mil:PLAYER.mil,saude:PLAYER.saude,ciencia:PLAYER.ciencia,diplo:PLAYER.diplo,emGuerra:PLAYER.emGuerra}});aiQueue.push(json);}
+  catch(e){aiQueue.push(gerarEventoLocal(tipo));}
+  finally{aiPending=false;$('aiLoader').classList.remove('on');}
+}
+async function gerarNarrativaAcao(acao){
+  if(!PLAYER)return;$('aiLoader').classList.add('on');
+  const local={manchete:`${acao.t} vira prioridade nacional`,reacao:`Medida divide opiniões e movimenta ${PLAYER.nome}.`,emoji:acao.ico};
+  try{const json=await callNarrative({mode:'action',country:PLAYER.nome,day:dia,action:acao.t,state:{aprovacao:PLAYER.aprovacao,estabilidade:PLAYER.estabilidade}});addBulletin(json.emoji||acao.ico,json.manchete||local.manchete,json.reacao||local.reacao,'ai-event');headline(flag(PLAYER.nome)+' — '+(json.manchete||local.manchete));setTicker(json.manchete||local.manchete);}
+  catch(e){addBulletin(local.emoji,local.manchete,local.reacao,'act');headline(flag(PLAYER.nome)+' — '+local.manchete);setTicker(local.manchete);}
+  finally{$('aiLoader').classList.remove('on');}
+}
+
+function processarFilaIA(){
+  if(!aiQueue.length||!PLAYER)return;
+  const ev=aiQueue.shift();const n=PLAYER;
+  // aplicar impacto base
+  if(ev.impacto){
+    if(ev.impacto.aprovacao)n.aprovacao+=ev.impacto.aprovacao;
+    if(ev.impacto.estabilidade)n.estabilidade+=ev.impacto.estabilidade;
+    if(ev.impacto.legitimidade)n.legitimidade+=ev.impacto.legitimidade;
+    if(ev.impacto.caixa_pct)n.caixa+=n.pib*ev.impacto.caixa_pct;
+  }
+  if(ev.escolhas&&ev.escolhas.length>=2){
+    const choices=ev.escolhas.map(c=>({l:c.texto,t:c.efeito_desc,
+      go:m=>{if(c.impacto){if(c.impacto.aprovacao)m.aprovacao+=c.impacto.aprovacao;if(c.impacto.estabilidade)m.estabilidade+=c.impacto.estabilidade;if(c.impacto.legitimidade)m.legitimidade+=c.impacto.legitimidade;}},msg:c.efeito_desc}));
+    showPopup(ev.emoji||'⚡',ev.titulo||'Evento',ev.descricao||'',choices);
+  }else{
+    addBulletin(ev.emoji||'📰',ev.titulo||'Notícia',ev.descricao||'',ev.tipo==='conquista'?'good':ev.tipo==='crise'?'bad':'warn');
+    headline(flag(n.nome)+' — '+(ev.titulo||'Notícia'));
+  }
+  clampAll();refresh();
+}
+
+
+/* ===== RITMO, OBJETIVOS E EVENTOS MUNDIAIS ===== */
+let worldTension=28,actionCombo=0,lastActionDay=-99,comboTimer=null,nextWorldEvent=18;
+const objectives=[
+  {id:'approval',label:'Atingir 60% de aprovação',reward:'+1 CP',done:false,check:n=>n.aprovacao>=60,grant:n=>{cp=Math.min(CP_MAX,cp+1);}},
+  {id:'economy',label:'Crescer o PIB em 5%',reward:'Caixa +1% PIB',done:false,check:n=>n.pib>=n.pib0*1.05,grant:n=>{n.caixa+=n.pib*.01;}},
+  {id:'diplo',label:'Firmar uma aliança ou acordo',reward:'Diplomacia +6',done:false,check:n=>n.aliados.length+n.acordos.length>0,grant:n=>{n.diplo+=6;}}
+];
+function setTicker(txt){const t=$('tickerText');if(t){t.textContent=txt;t.style.animation='none';void t.offsetWidth;t.style.animation='tickerSlide 14s linear infinite';}}
+function addTension(v,reason=''){worldTension=clamp(worldTension+v,0,100);updateMetaHud();if(reason)setTicker(reason);}
+function registerAction(label){actionCombo=dia-lastActionDay<=24?actionCombo+1:1;lastActionDay=dia;clearTimeout(comboTimer);$('comboValue').textContent='x'+actionCombo;$('comboText').textContent=actionCombo>=4?'Governo em alta rotação':actionCombo>=2?'Momentum em alta':'Nova sequência iniciada';$('comboToast').classList.add('on');comboTimer=setTimeout(()=>$('comboToast').classList.remove('on'),2600);if(actionCombo>=4){cp=Math.min(CP_MAX,cp+1);addBulletin('⚡','Bônus de momentum','Sequência política recuperou 1 CP.','good');actionCombo=0;}}
+function updateObjectives(){if(!PLAYER)return;let done=0;objectives.forEach(o=>{if(!o.done&&o.check(PLAYER)){o.done=true;o.grant(PLAYER);addBulletin('🎯','Objetivo concluído',`${o.label} — recompensa: ${o.reward}.`,'good');}if(o.done)done++;});$('missionCount').textContent=`${done}/${objectives.length}`;$('missionList').innerHTML=objectives.map(o=>`<div class="missionItem ${o.done?'done':''}"><i>${o.done?'✓':'·'}</i><span>${o.label}</span><em>${o.reward}</em></div>`).join('');}
+function updateMetaHud(){const v=Math.round(worldTension);$('tensionValue').textContent=v+'%';$('tensionFill').style.width=v+'%';$('tensionValue').style.color=v>70?'#fb4b64':v>45?'#fbbf24':'#34d399';if(PLAYER)$('composeFlag').textContent=flag(PLAYER.nome);updateObjectives();queueGlobeRefresh();}
+function gerarEventoMundo(){
+  const a=pick(NATIONS),b=pick(NATIONS.filter(n=>n!==a));const roll=Math.random();
+  if(roll<.28){addTension(6,`${flag(a.nome)} ${a.nome} mobiliza forças perto de ${flag(b.nome)} ${b.nome}.`);addBulletin('🛰️','Movimentação militar',`${flag(a.nome)} ${a.nome} desloca tropas e eleva o alerta regional.`,'war');ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:['rgba(251,75,100,.05)','#fb4b64'],altitude:.16,stroke:.12,dashLength:.12,dashGap:.16,animate:1800,_until:Date.now()+18000});pulseImpact(a);}
+  else if(roll<.58){addTension(-2,`${flag(a.nome)} e ${flag(b.nome)} anunciam corredor comercial.`);addBulletin('📈','Novo corredor comercial',`${a.nome} e ${b.nome} reduzem barreiras e ampliam exportações.`,'good');ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:['rgba(52,211,153,.04)','#34d399'],altitude:.12,stroke:.1,dashLength:.18,dashGap:.2,animate:3100,_until:Date.now()+18000});}
+  else if(roll<.8){addTension(2,`Crise política domina as redes em ${flag(a.nome)} ${a.nome}.`);addBulletin('📣','Crise política',`Protestos pressionam o governo de ${a.nome}.`,'warn');pulseImpact(a,'251,191,36');}
+  else{addTension(-4,`${flag(a.nome)} lidera missão diplomática internacional.`);addBulletin('🤝','Cúpula internacional',`${a.nome} articula uma rodada de negociações multilaterais.`,'good');}
+  ambientArcs=ambientArcs.filter(x=>!x._until||x._until>Date.now());queueGlobeRefresh();
+}
+setInterval(()=>{const now=new Date();const val=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);const el=$('realClock');if(el)el.textContent=val+' BRT';},1000);
+
+/* ===== AÇÕES ===== */
+const ACOES=[
+  {id:'saude',ico:'🏥',t:'Saúde',cp:1,c:.014,cd:60,grupos:{sau:12,sind:6},go:n=>{n.saude+=10;n.aprovacao+=3;},msg:'Hospitais entregues'},
+  {id:'ciencia',ico:'🔬',t:'Pesquisa',cp:1,c:.012,cd:55,grupos:{uni:12},go:n=>{n.ciencia+=10;n.aprovacao-=1;},msg:'Verba para universidades'},
+  {id:'social',ico:'🏘️',t:'Social',cp:2,c:.030,cd:90,grupos:{sind:14,emp:-8},go:n=>{n.aprovacao+=12;n.estabilidade+=5;},msg:'Programa social lançado'},
+  {id:'infra',ico:'🏗️',t:'Obras',cp:2,c:.035,cd:120,grupos:{emp:10,sind:6},go:n=>{n.pib*=1.04;n.aprovacao+=5;},msg:'Infraestrutura expandida'},
+  {id:'militar',ico:'🛡️',t:'Armamento',cp:1,c:.022,cd:75,grupos:{mil:14,sind:-6},go:n=>{n.mil+=12+(n._milBonus||0);n.aprovacao-=5;},msg:'Forças reforçadas'},
+  {id:'diplo',ico:'🤝',t:'Diplomacia',cp:1,c:.008,cd:60,grupos:{emp:6,uni:4},go:n=>{n.diplo+=11+(n._cultBonus||0);n.aprovacao+=2;},msg:'Acordos diplomáticos'},
+  {id:'anticorr',ico:'🔍',t:'Anticorrupção',cp:3,c:.010,cd:150,grupos:{uni:10,sind:8,emp:-4},go:n=>{n.legitimidade+=16;n.estabilidade+=8;n.aprovacao+=5;},msg:'Operação anticorrupção'},
+  {id:'propag',ico:'📺',t:'Propaganda',cp:1,c:.006,cd:45,grupos:{mil:4,uni:-8},go:n=>{n.aprovacao+=10;n.legitimidade-=8;efeitos.push({dias:110,f:m=>{m.aprovacao-=.09;}});},msg:'Campanha nacional'},
+  {id:'austeridade',ico:'✂️',t:'Austeridade',cp:2,c:-.030,cd:120,grupos:{emp:10,sind:-14},go:n=>{n.aprovacao-=12;n.estabilidade-=7;n.saude-=4;},msg:'Pacote de cortes'},
+  {id:'reforco',ico:'🪖',t:'Reforço',cp:1,c:.018,cd:30,grupos:{mil:8},go:n=>{if(n.emGuerra)n.warStrength=clamp(n.warStrength+18,0,100);n.mil+=3;},msg:'Tropas reforçadas'},
+  {id:'excecao',ico:'🚨',t:'Exceção',cp:3,c:.014,cd:200,grupos:{mil:16,uni:-18},go:n=>{n.estabilidade+=28;if(!n._excecaoFree)n.legitimidade-=25;n.aprovacao-=8;n.diplo-=10;},msg:'Estado de exceção'},
+];
+const cpCusto=a=>Math.max(1,a.cp+(PLAYER?PLAYER._dCp||0:0));
+const podeUsar=a=>{if(!PLAYER)return false;const n=PLAYER,custo=a.c*n.pib,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
+  if(a.id==='reforco'&&!n.emGuerra)return false;
+  return (freeSci||cp>=cpCusto(a))&&(custo<=0||n.caixa>=custo)&&!(CD[a.id]>dia);};
+
+async function usar(a){
+  if(!PLAYER||!podeUsar(a))return;const n=PLAYER;
+  const freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
+  if(!freeSci)cp-=cpCusto(a);n.caixa-=a.c*n.pib;a.go(n);
+  if(a.grupos)Object.entries(a.grupos).forEach(([k,v])=>{if(n.grupos[k]!==undefined)n.grupos[k]=clamp(n.grupos[k]+v,0,100);});
+  clampAll();CD[a.id]=dia+a.cd;registerAction(a.t);refresh();updateMetaHud();
+  // Narrativa IA para a ação
+  gerarNarrativaAcao(a);
+}
+
+/* ===== BOLETIM ===== */
+function addBulletin(ico,titulo,texto,tipo){
+  const el=document.createElement('article');el.className='bitem '+tipo;
+  const mesAtual=Math.floor(dia/30)+1,handles={war:'@defesa_global',bad:'@alerta_estado',good:'@progresso',warn:'@radar_politico',act:'@palacio',"ai-event":'@central_intel'};
+  const handle=handles[tipo]||'@estado_maior',likes=Math.floor(8+Math.random()*240),reposts=Math.floor(2+Math.random()*70);
+  el.innerHTML=`<div class="bico">${ico}</div><div class="btxt"><div><strong>${titulo}</strong><span class="verified">✓</span> <span class="bhandle">${handle}</span></div><span class="bcopy">${texto}</span><span class="btime">Mês ${mesAtual} · Dia ${dia} · agora</span><div class="bactions"><button title="Responder">◯ ${Math.floor(Math.random()*18)}</button><button title="Republicar">↻ ${reposts}</button><button class="likeBtn" title="Curtir">♡ ${likes}</button><button title="Compartilhar">⌁</button></div></div>`;
+  el.querySelector('.likeBtn').onclick=e=>{const b=e.currentTarget;b.textContent='♥ '+(likes+1);b.style.color='#fb7185';};
+  const B=$('bulletin');B.insertBefore(el,B.firstChild);
+  while(B.children.length>22)B.removeChild(B.lastChild);
+  setTicker(`${ico} ${titulo} — ${texto}`);
+}
+
+let hlT=null;
+function headline(txt,war=false){const h=$('hl');h.textContent=txt;h.className='on'+(war?' war':'');clearTimeout(hlT);hlT=setTimeout(()=>h.classList.remove('on'),4200);}
+
+/* ===== REFRESH ===== */
+const STAT_DEF=[
+  {k:'aprovacao',l:'Aprov.',i:'📊',c:v=>v<30?'var(--rose)':v<55?'var(--amber)':'var(--teal)'},
+  {k:'estabilidade',l:'Estab.',i:'🏛️',c:v=>v<30?'var(--rose)':v<55?'var(--amber)':'var(--teal)'},
+  {k:'legitimidade',l:'Legit.',i:'⚖️',c:v=>v<30?'var(--rose)':v<55?'var(--amber)':'var(--teal)'},
+  {k:'saude',l:'Saúde',i:'🏥',c:v=>v<30?'var(--rose)':v<55?'var(--amber)':'var(--teal)'},
+  {k:'ciencia',l:'Ciência',i:'🔬',c:v=>v<40?'var(--amber)':'var(--teal)'},
+  {k:'mil',l:'Militar',i:'🛡️',c:v=>v<30?'var(--rose)':'var(--teal)'},
+  {k:'diplo',l:'Diplo.',i:'🤝',c:v=>v<30?'var(--rose)':'var(--teal)'},
+];
+const fluxoAnual=()=>{
+  if(!PLAYER)return 0;const n=PLAYER,tx=TAXAS[taxIdx].v;
+  const coloniaRenda=n.colonias.reduce((s,c)=>s+c.dreno*12,0);
+  const acordoBonus=n.acordos.reduce((s,ac)=>s+n.pib*ac.bonus,0);
+  return (n.pib*tx)-(n.pib*GASTO)-(n.divida*JURO)-(n.emGuerra?n.pib*.04:0)-(n.sancoes*n.pib*.015)+coloniaRenda+acordoBonus;
+};
+function refresh(){
+  if(!PLAYER)return;const n=PLAYER;
+  $('statRow').innerHTML=STAT_DEF.map(({k,l,i,c})=>{const v=Math.round(n[k]),prev=prevStats[k]||v,d=v-prev;
+    const tr=d>0.5?`<span class="tr up">↑</span>`:d<-0.5?`<span class="tr dn">↓</span>`:`<span class="tr eq">·</span>`;
+    return `<div class="sc"><span class="si">${i}</span><div><span class="sv" style="color:${c(v)}">${v}</span><span class="sl">${l}</span></div>${tr}</div>`;}).join('');
+  STAT_DEF.forEach(({k})=>{prevStats[k]=Math.round(n[k]);});
+  $('cpBar').innerHTML=Array.from({length:CP_MAX},(_,i)=>`<div class="pip ${i<cp?'on':''}"></div>`).join('');
+  const f=fluxoAnual();
+  $('eCash').textContent=money(n.caixa);$('eCash').style.color=n.caixa<0?'var(--rose)':'var(--bone)';
+  $('eFlow').textContent=(f>=0?'+':'')+money(f);$('eFlow').style.color=f>=0?'var(--teal)':'var(--rose)';
+  $('eDebt').textContent=Math.round(n.divida/n.pib*100)+'%';$('eDebt').style.color=n.divida/n.pib>1.2?'var(--rose)':n.divida/n.pib>.7?'var(--amber)':'var(--bone)';
+  $('taxDisp').textContent=Math.round(TAXAS[taxIdx].v*100)+'%';$('taxLbl').textContent=TAXAS[taxIdx].l;
+  [['emp'],['mil'],['sind'],['sau'],['uni']].forEach(([k])=>{const v=Math.round(n.grupos[k]),c=v<30?'var(--rose)':v<50?'var(--amber)':'var(--teal)';
+    $(`g_${k}`).style.width=v+'%';$(`g_${k}`).style.background=c;$(`gv_${k}`).textContent=v;});
+  const af=ACOES.filter(a=>a.id!=='reforco'||n.emGuerra);
+  $('actionRow').innerHTML=af.map(a=>{const off=!podeUsar(a),cdL=(CD[a.id]||0)-dia,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude'),custo=a.c*n.pib;
+    return `<button class="acard ${off?'off':''}" data-a="${a.id}" ${off?'disabled':''}><div class="ai">${a.ico}</div><div class="at">${a.t}</div><div class="ac">${freeSci?'0':cpCusto(a)} CP</div><div class="am">${custo<0?'+':''}${money(Math.abs(custo))}</div>${cdL>0?`<div class="cblk">${cdL}d</div>`:''}</button>`;}).join('');
+  $('actionRow').querySelectorAll('.acard').forEach(b=>{b.onclick=()=>{const a=ACOES.find(x=>x.id===b.dataset.a);if(a)usar(a);};});
+  // ---- PAINEL RELAÇÕES ----
+  let relHtml='';
+  if(n.aliados.length)relHtml+=n.aliados.map(a=>`<span title="Aliado: ${a.nome}" style="font-size:18px;cursor:pointer" onclick="openDossier(NATIONS.find(x=>x.nome==='${a.nome}'))">${flag(a.nome)}</span>`).join('');
+  if(n.colonias.length)relHtml+=n.colonias.map(c=>`<span title="Colônia: ${c.n.nome}" style="font-size:18px;opacity:.7;cursor:pointer" onclick="openDossier(NATIONS.find(x=>x.nome==='${c.n.nome}'))">${flag(c.n.nome)}🏴</span>`).join('');
+  if(n.acordos.length)relHtml+=n.acordos.map(ac=>`<span title="Acordo: ${ac.nacao} (${ac.meses}m)" style="font-size:18px;opacity:.8">${flag(ac.nacao)}💰</span>`).join('');
+  if(n.territorios>0)relHtml+=`<span style="font-family:var(--mono);font-size:11px;color:var(--amber);padding:2px 6px;background:rgba(245,166,35,.12);border-radius:2px">🗺️×${n.territorios}</span>`;
+  let relDiv=$('relPanel');
+  if(!relDiv&&relHtml){relDiv=document.createElement('div');relDiv.id='relPanel';relDiv.style.cssText='position:fixed;bottom:162px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;z-index:9;background:rgba(8,17,31,.85);padding:5px 10px;border-radius:3px;pointer-events:auto';document.body.appendChild(relDiv);}
+  if(relDiv)relDiv.innerHTML=relHtml;
+
+  if(n.emGuerra&&n.warTarget){const t=n.warTarget;$('warHud').classList.add('on');
+    $('wFlagL').textContent=flag(n.nome);$('wFlagR').textContent=flag(t.nome);
+    $('wNameL').textContent=n.nome;$('wNameR').textContent=t.nome;
+    $('wStrL').textContent=Math.round(n.warStrength)+'%';$('wStrR').textContent=Math.round(t.warStrength)+'%';
+    $('warDays').textContent='dia '+n.warDias;
+    const tot=n.warStrength+t.warStrength||1;$('wBarL').style.width=(n.warStrength/tot*100)+'%';$('wBarR').style.width=(t.warStrength/tot*100)+'%';
+  }else $('warHud').classList.remove('on');
+  updateMetaHud();queueGlobeRefresh();
+}
+
+/* ===== DOSSIER ===== */
+function relacaoStatus(n){
+  if(!PLAYER||n===PLAYER)return null;
+  const p=PLAYER;
+  if(p.emGuerra&&p.warTarget===n)return 'guerra';
+  if(p.aliados.find(a=>a.nome===n.nome))return 'aliado';
+  if(p.colonias.find(c=>c.n.nome===n.nome))return 'colonia';
+  if(p.acordos.find(a=>a.nacao===n.nome))return 'acordo';
+  return 'neutro';
+}
+
+function openDossier(n){
+  if(selN&&selN!==n){selN.halo.material.opacity=0;selN.mesh.material.color.set(PLAYER&&selN===PLAYER?0xF5A623:0x4A90D0);}
+  selN=n;n.halo.material.opacity=.9;
+  const rel=relacaoStatus(n);
+  const corHalo={guerra:0xFF5520,aliado:0x3ECFBA,colonia:0x8B78F0,acordo:0xF5A623,neutro:0x9B8BF0};
+  n.mesh.material.color.set(PLAYER&&n===PLAYER?0xF5A623:(corHalo[rel]||0x9B8BF0));
+  drawRoutes(n);focusNation(n);queueGlobeRefresh();const ldr=getLider(n.nome);
+  $('dFlag2').textContent=flag(n.nome);$('dCountry').textContent=n.nome;
+
+  // badge de relação
+  const relLabel={guerra:'⚔️ Em guerra',aliado:'🤝 Aliado militar',colonia:'🏴 Colônia',acordo:'💰 Acordo comercial',neutro:'— Relação neutra'};
+  $('dSub').textContent=(relLabel[rel]||ldr.cargo)+' · '+n.regiao;
+  $('dTrait').textContent=ldr.trait;
+
+  $('dStats').innerHTML=[
+    {l:'💰 PIB',v:money(n.pib),pct:null},{l:'👥 Pop.',v:(n.pop>=1000?(n.pop/1e3).toFixed(1)+'B':Math.round(n.pop)+'M'),pct:null},
+    {l:'🛡️ Militar',v:Math.round(n.mil),pct:n.mil},{l:'🏥 Saúde',v:Math.round(n.saude),pct:n.saude},
+    {l:'⚖️ Legitim.',v:Math.round(n.legitimidade),pct:n.legitimidade},{l:'🏦 Dívida',v:Math.round(n.divida/n.pib*100)+'%',pct:null},
+  ].map(({l,v,pct})=>`<div class="ds"><span class="dl">${l}</span><div class="dv">${v}</div>${pct!=null?`<div class="dbar"><div class="dfill" style="width:${pct}%;background:${pct<35?'var(--rose)':pct<60?'var(--amber)':'var(--teal)'}"></div></div>`:''}</div>`).join('');
+
+  // ---- BOTÕES por relação ----
+  let btns='';
+  if(!PLAYER){
+    btns=`<button class="dbtn dbtn-a" id="btnTake">▶ Assumir o cargo</button>`;
+  } else if(n!==PLAYER){
+    if(rel==='guerra'){
+      btns+=`<button class="dbtn dbtn-t" id="btnPeace">🕊️ Propor paz</button>`;
+      btns+=`<button class="dbtn dbtn-w" id="btnEscalar">💥 Escalar conflito (+tropas)</button>`;
+
+    } else if(rel==='aliado'){
+      btns+=`<button class="dbtn dbtn-t" id="btnConvocar">📯 Convocar aliado para guerra</button>`;
+      btns+=`<button class="dbtn dbtn-w" id="btnTrair">🔪 Trair aliança</button>`;
+
+    } else if(rel==='colonia'){
+      btns+=`<button class="dbtn dbtn-t" id="btnLiberar">🗽 Conceder independência</button>`;
+      btns+=`<button class="dbtn dbtn-w" id="btnReprimir">🔨 Reprimir resistência</button>`;
+
+    } else if(rel==='acordo'){
+      const ac=PLAYER.acordos.find(a=>a.nacao===n.nome);
+      btns+=`<button class="dbtn dbtn-t" id="btnRenovar">🔄 Renovar acordo (+1 ano)</button>`;
+      btns+=`<button class="dbtn dbtn-w" id="btnQuebrar">❌ Quebrar acordo comercial</button>`;
+
+    } else {
+      // neutro
+      if(!PLAYER.emGuerra)btns+=`<button class="dbtn dbtn-w" id="btnAtk">⚔️ Declarar guerra</button>`;
+      btns+=`<button class="dbtn dbtn-t" id="btnAlianca">🛡️ Propor aliança militar</button>`;
+      btns+=`<button class="dbtn dbtn-t" id="btnComercio">💰 Acordo comercial</button>`;
+      if(PLAYER.emGuerra&&PLAYER.warTarget){
+        btns+=`<button class="dbtn dbtn-t" id="btnConvidar">⚔️ Convidar para a guerra</button>`;
+      }
+    }
+  }
+  $('dBtns').innerHTML=btns;
+
+  // bind botões
+  const bind=(id,fn)=>{const b=$(id);if(b)b.onclick=()=>{fn();$('dossier').classList.remove('on');};};
+
+  bind('btnTake',()=>startGame(n));
+  bind('btnAtk',()=>declararGuerra(n));
+  bind('btnPeace',()=>propazGuerra());
+
+  bind('btnEscalar',()=>{
+    if(!PLAYER||cp<1)return;cp--;
+    PLAYER.warStrength=clamp(PLAYER.warStrength+22,0,100);PLAYER.mil=clamp(PLAYER.mil+4,0,100);
+    PLAYER.caixa-=PLAYER.pib*.012;PLAYER.aprovacao-=3;
+    addBulletin('💥','Escalada militar',`Ofensiva intensificada contra ${n.nome}.`,'war');refresh();
+  });
+
+  bind('btnTrair',()=>{
+    if(!PLAYER)return;
+    const p=PLAYER;
+    p.aliados=p.aliados.filter(a=>a.nome!==n.nome);
+    p.legitimidade-=22;p.diplo-=18;p.aprovacao-=10;
+    n.mesh.material.color.set(0xFF5520);// vira inimigo
+    addBulletin('🔪','Traição','Aliança rompida unilateralmente. Mundo em choque.','bad');
+    addBulletin('⚠️','Reação internacional',`${n.nome} declara ${flag(n.nome)} inimigo. Vizinhos alinhados com eles.`,'bad');
+    // consequência: n pode entrar em guerra contra o player futuramente
+    setTimeout(()=>{if(playing&&!PLAYER.emGuerra&&Math.random()>.4){declararGuerra(n);}},15000);
+    refresh();
+  });
+
+  bind('btnConvocar',()=>{
+    if(!PLAYER||!PLAYER.warTarget)return;const p=PLAYER,alvo=p.warTarget;
+    // aliado entra na guerra: boost de força
+    p.warStrength=clamp(p.warStrength+30,0,100);
+    p.mil=clamp(p.mil+6,0,100);
+    addBulletin('📯','Aliado convocado',`${flag(n.nome)} ${n.nome} entra no conflito ao seu lado!`,'good');
+    addBulletin('⚠️','Atenção',`Em contrapartida, você fica obrigado a entrar nas guerras de ${n.nome}.`,'warn');
+    n.mesh.material.color.set(0x3ECFBA);refresh();
+  });
+
+  bind('btnLiberar',()=>{
+    if(!PLAYER)return;const p=PLAYER;
+    p.colonias=p.colonias.filter(c=>c.n.nome!==n.nome);
+    p.legitimidade+=14;p.diplo+=12;p.aprovacao+=6;p.resistenciaInterna-=15;
+    n.mesh.material.color.set(0x4A90D0);
+    addBulletin('🗽','Independência concedida',`${n.nome} reconhece histórico colaborativo.`,'good');
+    addBulletin('🌐','Repercussão positiva','ONU elogia decisão. Sanção removida.',rel==='colonia'?'good':'act');
+    if(p.sancoes>0)p.sancoes--;refresh();
+  });
+
+  bind('btnReprimir',()=>{
+    if(!PLAYER||cp<1)return;const p=PLAYER;cp--;
+    p.caixa-=p.pib*.01;p.mil=clamp(p.mil+3,0,100);p.legitimidade-=10;p.resistenciaInterna-=12;
+    addBulletin('🔨','Repressão','Tropas enviadas a sufocar resistência na colônia.','bad');
+    addBulletin('🌐','ONU condena',`Novo relatório critica tratamento de ${n.nome}.`,'bad');
+    p.sancoes=Math.min(p.sancoes+1,5);refresh();
+  });
+
+  bind('btnRenovar',()=>{
+    if(!PLAYER||cp<1)return;const p=PLAYER;cp--;
+    const ac=p.acordos.find(a=>a.nacao===n.nome);if(ac)ac.meses+=12;
+    p.diplo+=5;p.caixa+=p.pib*.008;
+    addBulletin('🔄','Acordo renovado',`Parceria comercial com ${n.nome} estendida por mais 12 meses.`,'good');refresh();
+  });
+
+  bind('btnQuebrar',()=>{
+    if(!PLAYER)return;const p=PLAYER;
+    p.acordos=p.acordos.filter(a=>a.nacao!==n.nome);
+    p.diplo-=14;p.legitimidade-=8;
+    // consequência: país perde o bônus de PIB e pode entrar em conflito
+    addBulletin('❌','Acordo quebrado',`${n.nome} reage com tarifas de retaliação.`,'bad');
+    addBulletin('📉','Retaliação',`Exportações para ${n.nome} bloqueadas. PIB sofre.`,'bad');
+    p.pib*=.985;n.mesh.material.color.set(0x888888);refresh();
+  });
+
+  bind('btnAlianca',()=>{
+    if(!PLAYER)return;const p=PLAYER;
+    if(p.diplo<40){addBulletin('❌','Rejeitado',`${n.nome} recusou — sua diplomacia é fraca.`,'bad');return;}
+    if(cp<2){addBulletin('❌','Sem CP','Precisa de 2 CP para propor aliança.','bad');return;}
+    cp-=2;p.aliados.push(n);p.diplo+=8;p.mil=clamp(p.mil+5,0,100);
+    n.mesh.material.color.set(0x3ECFBA);
+    addBulletin('🛡️','Aliança firmada',`${flag(n.nome)} ${n.nome} é agora aliado militar.`,'good');
+    addBulletin('⚠️','Obrigação mútua',`Você será chamado se ${n.nome} for atacado.`,'warn');refresh();
+  });
+
+  bind('btnComercio',()=>{
+    if(!PLAYER)return;const p=PLAYER;
+    if(cp<1){addBulletin('❌','Sem CP','Precisa de 1 CP.','bad');return;}
+    cp-=1;p.acordos.push({nacao:n.nome,bonus:.008,meses:12});
+    p.diplo+=5;n.mesh.material.color.set(0xF5A623);
+    addBulletin('💰','Acordo comercial',`Fluxo de exportações com ${n.nome} estabelecido.`,'good');
+    addBulletin('📈','PIB cresce',`+0.8% ao ano enquanto o acordo estiver ativo.`,'good');refresh();
+  });
+
+  bind('btnConvidar',()=>{
+    if(!PLAYER||!PLAYER.warTarget)return;const p=PLAYER,alvo=p.warTarget;
+    if(p.diplo<50){addBulletin('❌','Rejeitado',`${n.nome} recusou entrar na guerra — sua diplomacia é fraca.`,'bad');return;}
+    if(cp<2){addBulletin('❌','Sem CP','Precisa de 2 CP.','bad');return;}
+    cp-=2;p.warStrength=clamp(p.warStrength+25,0,100);
+    p.aliados.push(n);n.mesh.material.color.set(0x3ECFBA);
+    addBulletin('⚔️','Aliado de guerra',`${flag(n.nome)} ${n.nome} entra no conflito contra ${flag(alvo.nome)} ${alvo.nome}.`,'war');
+    addBulletin('⚠️','Custo diplomático',`Neutros veem coalização como ameaça.`,'warn');
+    p.diplo-=8;p.sancoes=Math.min(p.sancoes+1,5);refresh();
+  });
+
+  $('dossier').classList.add('on');
+}
+$('dClose').onclick=()=>$('dossier').classList.remove('on');
+
+/* ===== START ===== */
+function startGame(n){
+  document.body.classList.add('game-on');PLAYER=n;playing=true;const ldr=getLider(n.nome);ldr.bonus(n);
+  n.mesh.material.color.set(0xF5A623);n.mesh.scale.multiplyScalar(1.8);
+  $('intro').classList.add('off');
+  $('topBar').classList.add('on');$('clockBox').classList.add('on');
+  $('actionBar').classList.add('on');$('bulletin').classList.add('on');$('groupBar').classList.add('on');$('feedShell').classList.add('on');$('missionPanel').classList.add('on');$('worldTicker').classList.add('on');
+  $('playerFlag').textContent=flag(n.nome);$('playerName').textContent=n.nome;$('composeFlag').textContent=flag(n.nome);focusNation(n,1.48);spawnAmbientFlights();updateMetaHud();
+  refresh();
+  addBulletin(flag(n.nome),'Mandato iniciado',`${ldr.cargo} — ${n.nome}`,'act');
+  addBulletin('📊','Situação herdada',`Aprovação: ${Math.round(n.aprovacao)}% · Dívida: ${Math.round(n.divida/n.pib*100)}% PIB`,'warn');
+  // Primeiro evento IA após 10 segundos
+  setTimeout(()=>gerarEventoIA('evento'),10000);
+}
+document.querySelectorAll('.spd button').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.spd button').forEach(x=>x.classList.remove('act'));b.classList.add('act');speed=+b.dataset.s;};});
+$('txUp').onclick=()=>setTax(1);$('txDown').onclick=()=>setTax(-1);
+function setTax(d){if(!PLAYER||cp<1)return;const i=clamp(taxIdx+d,0,TAXAS.length-1);if(i===taxIdx)return;cp-=1;const n=PLAYER,imp=n._taxImune?0:1;taxIdx=i;
+  if(d>0){n.aprovacao-=7*imp;addBulletin('💸','Impostos sobem',Math.round(TAXAS[i].v*100)+'% ao ano','bad');}
+  else{n.aprovacao+=6*imp;addBulletin('💸','Impostos caem',Math.round(TAXAS[i].v*100)+'% ao ano','good');}
+  registerAction(d>0?'Aumentar impostos':'Reduzir impostos');refresh();updateMetaHud();}
+
+/* ===== GUERRA ===== */
+function declararGuerra(t){if(!PLAYER)return;const n=PLAYER;if(!t||n.emGuerra)return;
+  const isViz=n.vizinhos.includes(t),cpC=isViz?2:3,cashC=n.pib*(isViz?.02:.04)*(n._warDiscount||1);
+  if(cp<cpC){addBulletin('❌','Sem CP','Capital político insuficiente','bad');return;}
+  if(n.caixa<cashC){addBulletin('❌','Sem caixa',money(cashC)+' necessários','bad');return;}
+  cp-=cpC;n.caixa-=cashC;n.emGuerra=true;n.warTarget=t;n.warDias=0;
+  n.warStrength=clamp(n.mil+Math.random()*10,10,100);t.warStrength=clamp(t.mil+Math.random()*10,10,100);
+  n.aprovacao-=12;n.diplo-=15;n.legitimidade-=8;
+  if(!isViz||t.diplo>65){n.sancoes+=1;n.pib*=.97;addBulletin('🌐','Sanção ONU','Comunidade internacional condena','bad');}
+  n.mesh.material.color.set(0xFF5520);t.mesh.material.color.set(0xFF4444);
+  drawWarArc(n,t);spawnWarUnits(n,t);pulseImpact(t);addTension(18,`${flag(n.nome)} declara guerra a ${flag(t.nome)} ${t.nome}.`);
+  addBulletin('⚔️','GUERRA DECLARADA',`${flag(n.nome)} ataca ${flag(t.nome)} ${t.nome}`,'war');
+  headline(`⚔️ ${flag(n.nome)} vs ${flag(t.nome)} ${t.nome}`,true);refresh();
+  gerarEventoIA('crise');
+}
+function propazGuerra(){if(!PLAYER)return;const n=PLAYER,t=n.warTarget;if(!t)return;
+  n.caixa-=n.pib*.015;n.diplo+=6;n.legitimidade+=4;n.aprovacao+=5;addTension(-12,`${flag(n.nome)} e ${flag(t.nome)} anunciam cessar-fogo.`);encerrarGuerra(n,t);
+  addBulletin('🕊️','Paz proposta','Conflito encerrado','good');refresh();}
+function vitoriaGuerra(n,t){
+  const reparacoes=t.pib*0.07;
+  n.caixa+=reparacoes;
+  encerrarGuerra(n,t);
+  headline(`🏆 ${flag(n.nome)} VENCE — ${flag(t.nome)} capitula`,true);
+  addBulletin('🏆','Vitória!',`${t.nome} capitulou após ${n.warDias} dias de conflito.`,'good');
+
+  showPopup('🏆','Vitória — O que fazer com '+ t.nome +'?',
+    `${flag(t.nome)} ${t.nome} capitulou. Reparações de ${money(reparacoes)} já foram depositadas. Agora você decide o destino dessa nação.`,[
+
+    {l:`🕊️ Paz com reparações`,
+     t:`Diplomacia mundial te agradece. ${t.nome} mantém soberania.`,
+     efeito:'💰 Reparações já recebidas · Diplo +8 · Legit. +6 · ONU aliviada',
+     go:m=>{
+       m.diplo+=8;m.legitimidade+=6;m.aprovacao+=4;
+       addBulletin('🕊️','Paz assinada',`${t.nome} reconhece derrota e paga reparações.`,'good');
+     },msg:'Paz negociada.'},
+
+    {l:`🪖 Anexação parcial`,
+     t:`Incorpora território e tropas de ${t.nome}. ONU protesta.`,
+     efeito:'🗺️ Território +1 · Militar +14 · PIB +3% · ONU sanção · Diplo −10',
+     go:m=>{
+       m.territorios=(m.territorios||0)+1;m.mil=clamp(m.mil+14,0,100);m.pib+=t.pib*.03;
+       m.diplo-=10;m.sancoes+=1;m.legitimidade-=6;m.aprovacao-=5;
+       m.resistenciaInterna+=8;
+       addBulletin('🗺️','Território anexado',`Forças de ${t.nome} incorporadas ao exército.`,'war');
+       t.mesh.material.color.set(0xF5A623);// mesmo tom do jogador
+     },msg:'Anexação declarada.'},
+
+    {l:`🏴 Colonizar ${t.nome}`,
+     t:`Drena recursos mensalmente. Resistência cresce com o tempo.`,
+     efeito:`💰 +${money(t.pib*.04)}/mês · Militar +8 · Legit. −14 · Resist. interna cresce`,
+     go:m=>{
+       m.colonias.push({n:t, dreno:t.pib*.04/12});
+       m.mil=clamp(m.mil+8,0,100);m.legitimidade-=14;m.sancoes+=2;
+       m.resistenciaInterna+=20;m.aprovacao-=8;
+       t.mesh.material.color.set(0x8B78F0);// roxo = colônia
+       addBulletin('🏴','Colônia estabelecida',`${t.nome} agora drena recursos para o seu país.`,'war');
+       addBulletin('⚠️','Resistência cresce',`População de ${t.nome} já organiza resistência.`,'warn');
+     },msg:'Colonização declarada.'},
+
+    {l:`🤝 União forçada`,
+     t:`${t.nome} vira aliado militar obrigatório. População deles odeia.`,
+     efeito:`⚔️ Aliado permanente · Militar +10 · Legit. −10 · Resist. interna +15`,
+     go:m=>{
+       if(!m.aliados.find(a=>a.nome===t.nome))m.aliados.push(t);
+       m.mil=clamp(m.mil+10,0,100);m.legitimidade-=10;m.aprovacao-=6;
+       m.resistenciaInterna+=15;t.warStrength=50;
+       t.mesh.material.color.set(0x40D0BC);// teal = aliado forçado
+       addBulletin('🤝','União declarada',`${t.nome} é aliado militar sob pressão.`,'warn');
+       addBulletin('😡','Tensão interna',`Milícias de ${t.nome} se recusam a depor armas.`,'bad');
+     },msg:'União forçada.'},
+  ]);
+  gerarEventoIA('conquista');
+}
+function derrotaGuerra(n,t){n.caixa-=n.pib*.05;n.aprovacao-=18;n.estabilidade-=14;n.mil-=12;n.legitimidade-=10;
+  encerrarGuerra(n,t);addBulletin('💀','Derrota militar','Tropas recuam. País humilhado.','bad');refresh();}
+function encerrarGuerra(n,t){n.emGuerra=false;n.warTarget=null;n.warDias=0;t.warStrength=clamp(t.mil+Math.random()*10,10,100);
+  n.mesh.material.color.set(0xF5A623);t.mesh.material.color.set(0x4A90D0);drawWarArc(null,null);clearWarUnits();queueGlobeRefresh();}
+function tickGuerra(){if(!PLAYER)return;const n=PLAYER,t=n.warTarget;if(!t)return;n.warDias++;
+  n.warStrength=clamp(n.warStrength-((t.mil/100)*.18+Math.random()*.14),0,100);
+  t.warStrength=clamp(t.warStrength-((n.mil/100)*.20+Math.random()*.16),0,100);
+  n.caixa-=n.pib*.0004;n.aprovacao-=.06;n.grupos.mil+=.04;
+  if(t.warStrength<=0)vitoriaGuerra(n,t);else if(n.warStrength<=0)derrotaGuerra(n,t);}
+
+/* ===== POPUP ===== */
+function showPopup(ico,title,desc,choices){
+  speed=0;document.querySelectorAll('.spd button').forEach(b=>{b.classList.remove('act');if(b.dataset.s==='0')b.classList.add('act');});
+  $('pIco').textContent=ico;$('pTitle').textContent=title;$('pDesc').textContent=desc;
+  $('pChoices').innerHTML=choices.map((c,i)=>`<button class="popt ${c.war?'war-opt':''}" data-i="${i}"><span class="pl">${c.l}</span>${c.t||''}<span class="pe">${c.efeito||''}</span></button>`).join('');
+  $('pChoices').querySelectorAll('.popt').forEach(b=>{b.onclick=()=>{const c=choices[+b.dataset.i];if(PLAYER)c.go(PLAYER);clampAll();
+    addBulletin('📋','Sua decisão',c.msg||c.l,'act');refresh();$('popup').classList.remove('on');
+    speed=1;document.querySelectorAll('.spd button').forEach(x=>{x.classList.remove('act');if(x.dataset.s==='1')x.classList.add('act');});};});
+  $('popup').classList.add('on');}
+
+/* ===== CLAMP ===== */
+function clampAll(){if(!PLAYER)return;const n=PLAYER;
+  ['aprovacao','estabilidade','legitimidade','saude','ciencia','mil','diplo','corrupcao'].forEach(k=>n[k]=clamp(n[k],0,100));
+  n.congresso=clamp(n.congresso,10,95);n.oposicao=clamp(n.oposicao,0,80);n.sancoes=clamp(n.sancoes,0,5);
+  Object.keys(n.grupos).forEach(k=>n.grupos[k]=clamp(n.grupos[k],0,100));}
+
+/* ===== TICK ===== */
+function tick(dt){
+  if(!playing||speed===0||!PLAYER)return;acc+=dt*speed*1.15;
+  while(acc>=1){
+    acc-=1;dia++;const n=PLAYER,tx=TAXAS[taxIdx].v;
+    const rec=(n.pib*tx)/365,desp=(n.pib*GASTO)/365+(n.divida*JURO)/365+(n.emGuerra?n.pib*.04/365:0)+(n.sancoes*n.pib*.015/365);
+    n.caixa+=rec-desp;
+    if(n.caixa<0){n.divida+=Math.abs(n.caixa);n.caixa=0;if(!avisos.caixa){addBulletin('🔴','Cofre zerado','Governo rola dívida','bad');avisos.caixa=true;}}else avisos.caixa=false;
+    n.pib*=1+(.00014-Math.max(0,tx-.20)*.55*(0.0004)-(55-n.estabilidade)/2800+(n.ciencia/100)*.00013);
+    n.divida*=1+(JURO/365)*(n._debtMult||1)*.15;
+    n.aprovacao-=.032;if(n.divida/n.pib>1.2)n.aprovacao-=.018;
+    n.estabilidade+=(n.aprovacao>55?.022:-.026)+(n.legitimidade>65?.008:-.014);
+    n.legitimidade-=(n._legitDrain||.01);n.congresso+=(n.aprovacao>50?.005:-.008);n.oposicao+=(n.aprovacao<50?.012:-.005);
+    n.grupos.emp+=(tx<.18?.008:tx>.28?-.008:0);n.grupos.sind+=(n.aprovacao>55?.005:-.005);
+    efeitos.forEach(e=>{e.f(n);e.dias--;});efeitos=efeitos.filter(e=>e.dias>0);
+
+    // ---- COLÔNIAS: dreno mensal ----
+    if(dia%30===0&&n.colonias.length){
+      let totalDreno=0;
+      n.colonias.forEach(c=>{
+        totalDreno+=c.dreno;
+        // resistência cresce com tempo
+        c.resistencia=(c.resistencia||0)+1;
+        if(c.resistencia>6&&Math.random()<.3){
+          addBulletin('🔥','Revolta colonial',`Levante em ${c.n.nome}. Estabilidade em risco.`,'bad');
+          n.estabilidade-=5;n.aprovacao-=3;c.resistencia=0;
+        }
+      });
+      n.caixa+=totalDreno;
+      // resistência interna cresce
+      n.resistenciaInterna=Math.min(100,(n.resistenciaInterna||0)+n.colonias.length*0.3);
+    }
+
+    // ---- ACORDOS COMERCIAIS: bônus mensal ----
+    if(dia%30===0&&n.acordos.length){
+      n.acordos.forEach(ac=>{ac.meses--;n.pib*=1+(ac.bonus/12);});
+      n.acordos=n.acordos.filter(ac=>{
+        if(ac.meses<=0){
+          addBulletin('⏱️','Acordo expirado',`Parceria com ${ac.nacao} encerrada.`,'warn');
+          return false;
+        }return true;
+      });
+    }
+
+    // ---- RESISTÊNCIA INTERNA: consequências ----
+    if(n.resistenciaInterna>0){
+      n.resistenciaInterna=Math.max(0,n.resistenciaInterna-0.05);
+      if(n.resistenciaInterna>50){n.estabilidade-=.015;n.aprovacao-=.01;}
+      if(n.resistenciaInterna>80&&Math.random()<.002){
+        addBulletin('💥','Crise interna grave','Resistências coordenam ataque ao regime.','bad');
+        n.estabilidade-=10;n.legitimidade-=8;
+      }
+    }
+
+    // ---- ALIADOS: proteção mútua ----
+    if(dia%60===0&&n.aliados.length&&Math.random()<.15){
+      const al=n.aliados[Math.floor(Math.random()*n.aliados.length)];
+      if(Math.random()<.4){
+        addBulletin('📯',`${al.nome} pede ajuda`,`Seu aliado sofre pressão externa. Você pode ser chamado.`,'warn');
+      }else{
+        addBulletin('🛡️','Aliado ativo',`${flag(al.nome)} ${al.nome} contribui com inteligência militar.`,'good');
+        n.mil=clamp(n.mil+1,0,100);
+      }
+    }
+
+    // ---- TERRITÓRIO ANEXADO: efeitos ----
+    if(n.territorios>0){
+      n.pib*=1+(n.territorios*.00005);// pequeno boost diário
+      n.mil=clamp(n.mil+(n.territorios*.002),0,100);
+    }
+    cpAcc+=1/10;if(cpAcc>=1&&cp<CP_MAX){cp++;cpAcc=0;}else if(cpAcc>=1)cpAcc=1;
+    if(n.emGuerra)tickGuerra();
+    if(dia>=nextWorldEvent){gerarEventoMundo();nextWorldEvent=dia+32+Math.floor(Math.random()*42);}
+    if(dia%30===0)worldTension=clamp(worldTension+(n.emGuerra?2:-.5),0,100);
+    // Processar fila IA
+    if(aiQueue.length&&!$('popup').classList.contains('on'))processarFilaIA();
+    // Disparar eventos IA periodicamente
+    if(dia>=prox){
+      const tipos=['evento','evento','escandalo','crise','conquista'];
+      const tipo=tipos[Math.floor(Math.random()*tipos.length)];
+      gerarEventoIA(tipo);
+      prox=dia+25+Math.floor(Math.random()*20);
+    }
+    // Oposição
+    if(dia>=opTimer){const f=n.oposicao/100;
+      if(Math.random()<f*.5){addBulletin('📢','Oposição ataca',`"${n.nome} sob pressão", diz líder oposição`,'bad');n.aprovacao-=2*f;n.legitimidade-=1;}
+      opTimer=dia+55+Math.floor(Math.random()*45);}
+    if(n.divida/n.pib>1.5&&!avisos.div){addBulletin('🔴','FMI em alerta','Dívida passa 150% do PIB','bad');avisos.div=true;}
+    clampAll();if(dia%18===0)refresh();
+    $('dateStr').textContent=dataStr(dia);$('dayStr').textContent=`dia ${dia+1} de ${DIAS}`;
+    if(n.aprovacao<14&&n.estabilidade<32)return end('IMPEACHMENT','var(--rose)',`Congresso derrubou o governo no dia ${dia} de mandato.`);
+    if(n.legitimidade<10)return end('GOLPE DE ESTADO','var(--rose)','As instituições que você corroeu não estavam mais lá para te defender.');
+    if(n.estabilidade<6)return end('COLAPSO','var(--rose)','O estado tornou-se ingovernável antes do fim do mandato.');
+    if(n.grupos.mil<10&&n.legitimidade<40)return end('GOLPE MILITAR','var(--rose)','Os generais saíram dos quartéis às 3h da manhã.');
+    if(dia>=DIAS){const w=n.aprovacao>50;return end(w?'REELEITO 🎉':'DERROTA NAS URNAS',w?'var(--teal)':'var(--amber)',w?`${n.nome} te devolveu o mandato com ${Math.round(n.aprovacao)}% de aprovação.`:`Cumpriu os 4 anos com ${Math.round(n.aprovacao)}% de aprovação. O eleitor agradeceu e virou a página.`);}
+  }
+}
+function end(t,c,txt){playing=false;if(!PLAYER)return;const n=PLAYER;
+  $('oTitle').textContent=t;$('oTitle').style.color=c;$('oText').textContent=txt;
+  $('oGrid').innerHTML=`<div class="os">Aprovação<em>${Math.round(n.aprovacao)}%</em></div><div class="os">PIB<em>${(n.pib/n.pib0*100-100>=0?'+':'')}${(n.pib/n.pib0*100-100).toFixed(1)}%</em></div><div class="os">Dívida<em>${Math.round(n.divida/n.pib*100)}%</em></div><div class="os">Legit.<em>${Math.round(n.legitimidade)}</em></div>`;
+  $('over').classList.add('on');}
+
+/* ===== RENDER / TEMPO REAL ===== */
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1e3,.05);last=now;
+  updateWarUnits(now);tick(dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+addEventListener('resize',()=>{World.width(Math.max(320,innerWidth-(innerWidth<=820?0:418))).height(innerHeight);});
+
+/* BUSCA E ATALHOS DE NAÇÕES */
+function renderSearch(q=''){
+  const box=$('countryResults');if(!box)return;const term=q.trim().toLocaleLowerCase('pt-BR');
+  if(!term){box.classList.remove('on');box.innerHTML='';return;}
+  const list=NATIONS.filter(n=>n.nome.toLocaleLowerCase('pt-BR').includes(term)||n.regiao.toLocaleLowerCase('pt-BR').includes(term)).slice(0,8);
+  box.innerHTML=list.map(n=>`<button class="searchNation" data-name="${n.nome}"><span>${flag(n.nome)}</span><b>${n.nome}</b><small>${n.regiao}</small></button>`).join('');box.classList.toggle('on',!!list.length);
+  box.querySelectorAll('button').forEach(b=>b.onclick=()=>{const n=NATIONS.find(x=>x.nome===b.dataset.name);$('countrySearch').value=n.nome;box.classList.remove('on');openDossier(n);});
+}
+$('countrySearch')?.addEventListener('input',e=>renderSearch(e.target.value));
+$('countrySearch')?.addEventListener('keydown',e=>{if(e.key==='Enter'){const n=NATIONS.find(x=>x.nome.toLocaleLowerCase('pt-BR').includes(e.target.value.toLocaleLowerCase('pt-BR')));if(n)openDossier(n);}});
+document.querySelectorAll('.quickCountries button').forEach(b=>b.onclick=()=>{const n=NATIONS.find(x=>x.nome===b.dataset.country);if(n)openDossier(n);});
+spawnAmbientFlights();updateMetaHud();
+</script>

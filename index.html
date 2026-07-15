@@ -3,7 +3,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#02050b">
 <title>Estado Maior — Simulação Geopolítica</title>
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script type="text/plain" id="deferred-v9-source">
 
 
 
@@ -2015,6 +2016,10 @@ document.addEventListener('pointerdown',e=>{
  .mapEventCard{grid-template-columns:32px minmax(0,1fr)!important}
 }
 </style>
+<script>
+/* Executa o patch V9 somente depois que o núcleo do jogo foi carregado. */
+Function(`${document.getElementById('deferred-v9-source').textContent}\nwindow.participateMapEvent = participateMapEvent;`)();
+</script>
 <script>
 /* ===== PATCH V10 — comportamento final ===== */
 (function(){

@@ -1,0 +1,187 @@
+/* Estado Maior V31 — efeitos ativos, score parcial, capítulos no feed, warning retorno */
+
+/* ===== PAINEL DE EFEITOS ATIVOS ===== */
+#activeEffectsV31 {
+  position: fixed;
+  left: 88px;
+  bottom: 168px;
+  z-index: 13;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+}
+body.game-on #activeEffectsV31 { display: flex; }
+
+.effectPillV31 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  background: rgba(4,10,20,.88);
+  border: 1px solid rgba(148,163,184,.14);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  pointer-events: auto;
+  transition: opacity .3s;
+}
+.effectPillV31 .epIcon { font-size: 13px; line-height: 1; }
+.effectPillV31 .epName {
+  font: 800 9px var(--mono);
+  letter-spacing: .06em;
+  color: #c5d8e8;
+}
+.effectPillV31 .epBar {
+  width: 44px;
+  height: 3px;
+  background: rgba(255,255,255,.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.effectPillV31 .epFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .6s;
+}
+.effectPillV31.good .epFill { background: #34d399; }
+.effectPillV31.cost .epFill { background: #fbbf24; }
+.effectPillV31 .epDays {
+  font: 700 8px var(--mono);
+  color: #5e7488;
+  min-width: 30px;
+  text-align: right;
+}
+
+@media(max-width:820px) { #activeEffectsV31 { display: none !important; } }
+
+/* ===== SCORE PARCIAL NO HUD ===== */
+#legacyGaugeV31 {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  background: rgba(12,21,35,.72);
+  border: 1px solid rgba(148,163,184,.1);
+  border-radius: 11px;
+  flex-shrink: 0;
+  cursor: default;
+  position: relative;
+}
+body.game-on #legacyGaugeV31 { display: flex; }
+#legacyGaugeV31 .lgIcon { font-size: 13px; }
+#legacyGaugeV31 .lgVal {
+  font: 900 14px var(--mono);
+  color: #dbe8f4;
+  min-width: 28px;
+}
+#legacyGaugeV31 .lgLabel {
+  font: 800 7px var(--mono);
+  letter-spacing: .08em;
+  color: #5e7488;
+  text-transform: uppercase;
+  display: block;
+  line-height: 1.2;
+}
+#legacyGaugeV31 .lgName {
+  font: 700 9px var(--sans);
+  color: #9ab8cc;
+  display: block;
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tooltip do score */
+#legacyGaugeV31:hover .lgTooltipV31 { opacity: 1; pointer-events: auto; }
+.lgTooltipV31 {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 200px;
+  padding: 10px 12px;
+  border: 1px solid rgba(125,211,252,.2);
+  border-radius: 11px;
+  background: rgba(3,9,20,.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s;
+  z-index: 500;
+  box-shadow: 0 14px 40px rgba(0,0,0,.5);
+}
+.lgTooltipV31 b {
+  display: block;
+  font: 800 9px var(--mono);
+  letter-spacing: .1em;
+  color: #7cecf7;
+  margin-bottom: 6px;
+}
+.lgTooltipV31 .lgTRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #8fa3b8;
+  padding: 2px 0;
+}
+.lgTooltipV31 .lgTRow span { color: #c8dae8; font-family: var(--mono); }
+
+/* ===== CAPÍTULO NO FEED (post especial) ===== */
+.bitem.chapter-v31 {
+  background: rgba(124,58,237,.06) !important;
+  border-left: 3px solid #a78bfa !important;
+}
+.bitem.chapter-v31 .bico {
+  background: rgba(124,58,237,.15) !important;
+  border-color: rgba(167,139,250,.3) !important;
+}
+.bitem.chapter-v31 .btxt strong { color: #c4b5fd !important; }
+.bitem.chapter-v31 .chapterTagV31 {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(167,139,250,.15);
+  color: #a78bfa;
+  font: 800 7px var(--mono);
+  letter-spacing: .12em;
+}
+
+/* ===== WARNING DE RETORNO DECRESCENTE NO CARD ===== */
+.acard .repeatWarnV31 {
+  display: block;
+  margin-top: 3px;
+  font: 800 8px var(--mono);
+  letter-spacing: .05em;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: rgba(251,191,36,.1);
+  color: #fbbf24;
+  border: 1px solid rgba(251,191,36,.2);
+}
+.acard .repeatWarnV31.danger {
+  background: rgba(251,75,100,.1);
+  color: #ff8193;
+  border-color: rgba(251,75,100,.2);
+}
+
+/* ===== SOM: toggle visível na barra ===== */
+#soundToggleV31 {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  background: rgba(12,21,35,.62);
+  border: 1px solid rgba(148,163,184,.1);
+  border-radius: 9px;
+  color: #5e7488;
+  font: 800 8px var(--mono);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: .18s;
+}
+body.game-on #soundToggleV31 { display: flex; }
+#soundToggleV31.on { color: #7cecf7; border-color: rgba(34,211,238,.3); }
+#soundToggleV31 .stIcon { font-size: 14px; }
+
+@media(max-width:820px) { #soundToggleV31, #legacyGaugeV31 { display: none !important; } }

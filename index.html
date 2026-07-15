@@ -229,7 +229,7 @@ renderMapActivity();
         else{ev.severity=clamp(ev.severity-18,0,100);ev.deadlineDay=dia+20+Math.floor(Math.random()*20);}
       }
     });
-    mapLiveEvents=mapLiveEvents.filter(e=>e.lifeState!=='resolved'||dia-e.resolvedDay<=18).slice(0,3);renderMapActivity();
+    mapLiveEvents=mapLiveEvents.filter(e=>e.lifeState!=='resolved'||dia-e.resolvedDay<=45).slice(0,12);renderMapActivity();
   }
   const tickV16=tick;tick=function(dt){const before=dia,r=tickV16(dt);if(PLAYER&&dia!==before)eventLifeCycle();return r;};
   setTimeout(()=>{mapLiveEvents.forEach(normalizeEvent);renderMapActivity();},1000);
@@ -278,7 +278,7 @@ renderMapActivity();
 
   function spawnWorldTraffic(){if(mobileUnits.some(u=>u.scope==='traffic'))return;const add=(kind,icon,count,color,alt,speed)=>{for(let i=0;i<count;i++){const a=pick(NATIONS),b=kind==='car'||kind==='truck'?pick(a.vizinhos||NATIONS):pick(NATIONS.filter(n=>n!==a));if(!b||a===b)continue;mobileUnits.push({scope:'traffic',kind,icon,color,size:kind==='ship'?.8:kind==='plane'?.75:.65,label:`${kind==='car'?'Tráfego rodoviário':kind==='truck'?'Comboio de carga':kind==='ship'?'Navio em rota internacional':'Voo internacional'}`,from:a,to:b,t:Math.random(),speed:speed+Math.random()*speed*.45,baseAlt:alt,arcAlt:kind==='plane'?.1:kind==='ship'?.004:.009,lat:a.lat,lng:a.lng});}};add('car','●',8,'#7dd3fc',.012,.0002);add('truck','▣',6,'#fbbf24',.014,.00016);add('ship','⛴',8,'#67e8f9',.006,.00013);add('plane','✈',5,'#e0f2fe',.075,.00036);queueGlobeRefresh();}
 
-  const renderV20=renderMapActivity;renderMapActivity=function(){const r=renderV20();const list=document.getElementById('mapActivityList'),count=document.getElementById('mapActivityCount');if(!list)return r;const active=crises.filter(c=>!c.contained);active.slice(0,3).reverse().forEach(c=>list.insertAdjacentHTML('afterbegin',`<article class="mapEventCard worldCatastrophe"><span class="mapEventIcon">${kindInfo[c.kind].icon}</span><span><strong>${c.title}</strong><small>${c.nations.length} países · dano ${Math.round(c.damage)}% · risco crescente</small></span><em class="catastrophePulse">ESCALA</em><div class="eventLife"><div class="eventLifeTop"><span>INTENSIDADE ${Math.round(c.intensity)}%</span><b class="critical">SEM PRAZO PARA TERMINAR</b></div><div class="eventBar"><i style="width:${c.intensity}%;background:#fb4b64"></i></div></div><div class="mapEventActions"><button data-cat-map="${c.id}">VER NO MAPA</button><button class="primary danger" data-cat-act="${c.id}">INTERVIR</button></div></article>`));if(count)count.textContent=(+count.textContent||0)+active.length;list.querySelectorAll('[data-cat-map]').forEach(b=>b.onclick=()=>{const c=crises.find(x=>x.id===b.dataset.catMap),n=nationByName(c?.nations[c.nations.length-1]);if(n)focusNation(n,1.35);});list.querySelectorAll('[data-cat-act]').forEach(b=>b.onclick=()=>{const c=crises.find(x=>x.id===b.dataset.catAct);if(c)crisisIntervention(c);});return r;};
+  const renderV20=renderMapActivity;renderMapActivity=function(){const r=renderV20();const list=document.getElementById('mapActivityList'),count=document.getElementById('mapActivityCount');if(!list)return r;const active=crises.filter(c=>!c.contained);active.slice(0,12).reverse().forEach(c=>list.insertAdjacentHTML('afterbegin',`<article class="mapEventCard worldCatastrophe"><span class="mapEventIcon">${kindInfo[c.kind].icon}</span><span><strong>${c.title}</strong><small>${c.nations.length} países · dano ${Math.round(c.damage)}% · risco crescente</small></span><em class="catastrophePulse">ESCALA</em><div class="eventLife"><div class="eventLifeTop"><span>INTENSIDADE ${Math.round(c.intensity)}%</span><b class="critical">SEM PRAZO PARA TERMINAR</b></div><div class="eventBar"><i style="width:${c.intensity}%;background:#fb4b64"></i></div></div><div class="mapEventActions"><button data-cat-map="${c.id}">VER NO MAPA</button><button class="primary danger" data-cat-act="${c.id}">INTERVIR</button></div></article>`));if(count)count.textContent=(+count.textContent||0)+active.length;list.querySelectorAll('[data-cat-map]').forEach(b=>b.onclick=()=>{const c=crises.find(x=>x.id===b.dataset.catMap),n=nationByName(c?.nations[c.nations.length-1]);if(n)focusNation(n,1.35);});list.querySelectorAll('[data-cat-act]').forEach(b=>b.onclick=()=>{const c=crises.find(x=>x.id===b.dataset.catAct);if(c)crisisIntervention(c);});return r;};
   const participateV20=participateMapEvent;participateMapEvent=function(ev){const c=crisisForEvent(ev)||(DANGEROUS.has(ev?.kind)&&ev.severity>=72?ensureCrisis(ev):null);if(c&&!c.contained)return crisisIntervention(c);if(ev?.lifeState==='resolved'){const good=ev.severity<40,place=ev.a?.nome||'a região';return showPopup(good?'✅':'📜',good?'ACONTECIMENTO RESOLVIDO':'DESFECHO DO ACONTECIMENTO',good?`${ev.outcome||'A situação foi estabilizada.'} ${place} recupera estabilidade e os efeitos positivos serão acompanhados nos próximos meses.`:`${ev.outcome||'A crise deixou danos permanentes.'} O resultado afetou economia, população e relações políticas.`,[{l:'Fechar relatório',t:'Voltar ao mapa',efeito:good?'Crise encerrada':'Consequências registradas',go:()=>{},msg:'Relatório consultado'}]);}return participateV20(ev);};
 
   document.body.insertAdjacentHTML('beforeend','<aside id="simulationControls"><button class="simControl" id="timePauseV20">⏸ PAUSAR TEMPO</button><button class="simControl" id="globePauseV20">🌐 PARAR GLOBO</button></aside><aside id="doomStatus"></aside>');
@@ -989,7 +989,7 @@ body.panel-open #mapActivity,body.panel-open #missionPanel{opacity:.18;pointer-e
   <div style="font-family:var(--mono);font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)">Fim de mandato</div>
   <h2 id="oTitle">—</h2><p id="oText"></p>
   <div id="oGrid"></div>
-  <button class="obtn" onclick="location.reload()">Nova partida</button>
+  <button class="obtn" id="newGameButton" type="button">Nova partida</button>
 </div>
 
 <script>
@@ -2117,7 +2117,7 @@ function spawnMapEventVisual(ev){
 function pushMapLiveEvent(silent=false){
   const tpl=pick(MAP_EVENT_LIBRARY),a=pick(NATIONS),b=pick(NATIONS.filter(n=>n!==a));
   const ev={...tpl,a,b,id:Date.now()+Math.random(),created:Date.now()};
-  mapLiveEvents.unshift(ev);mapLiveEvents=mapLiveEvents.slice(0,3);
+  mapLiveEvents.unshift(ev);mapLiveEvents=mapLiveEvents.slice(0,12);
   const isRoute=['trade','military','diplomacy','aid'].includes(ev.kind);
   if(isRoute){ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:[`${ev.color}18`,ev.color],altitude:ev.kind==='military'?.18:.12,stroke:ev.kind==='military'?.16:.1,dashLength:.12,dashGap:.18,animate:ev.kind==='military'?1500:3000,type:'live-'+ev.kind,_until:Date.now()+24000});}
   pulseImpact(ev.kind==='military'?b:a,ev.kind==='military'?'251,75,100':ev.kind==='protest'?'251,191,36':'56,189,248');
@@ -2512,7 +2512,7 @@ body.game-on #v11Tools{display:flex}
   function activateCurrentScenario(){if(currentScenarioStarted)return;currentScenarioStarted=true;worldTension=Math.max(worldTension,62);
     const conflicts=[['Rússia','Ucrânia','Guerra na Ucrânia'],['Estados Unidos','Irã','Cessar-fogo EUA–Irã']];
     conflicts.forEach(([an,bn,title],i)=>{const a=NATIONS.find(n=>n.nome===an),b=NATIONS.find(n=>n.nome===bn);if(!a||!b)return;const ev={kind:'military',icon:'⚔️',title,text:i?'Confrontos recentes mantêm o cessar-fogo sob risco':'Hostilidades e ataques continuam na linha de frente',color:'#fb4b64',a,b,id:Date.now()+i,created:Date.now()};mapLiveEvents.unshift(ev);spawnMapEventVisual(ev);});
-    mapLiveEvents=mapLiveEvents.slice(0,3);renderMapActivity();
+    mapLiveEvents=mapLiveEvents.slice(0,12);renderMapActivity();
     const iran=NATIONS.find(n=>n.nome==='Irã'),russia=NATIONS.find(n=>n.nome==='Rússia'),ukraine=NATIONS.find(n=>n.nome==='Ucrânia');if(iran)iran.sancoes=Math.max(iran.sancoes,4);if(russia)russia.sancoes=Math.max(russia.sancoes,3);if(ukraine){ukraine.estabilidade=Math.min(ukraine.estabilidade,38);ukraine.caixa*=.75;}
   }
 
@@ -2854,7 +2854,7 @@ body.major-panel-open #missionPanel,body.major-panel-open #mapActivity,body.majo
 
   function mediate(c){if(!PLAYER||!c)return;if(influence<2){effectMessage('⚠️','Mediação não iniciada','Você precisa de 2 pontos de influência. O saldo atual aparece no topo da barra de ações.','warn');return;}const before=c.intensity,crisis=relatedCrisis(c);influence-=2;c.intensity=Math.max(6,c.intensity-18);PLAYER.diplo+=6;PLAYER.legitimidade+=2;EMWorld.changeRelation(PLAYER,nation(c.a),7);EMWorld.changeRelation(PLAYER,nation(c.b),7);if(crisis){crisis.intensity=Math.max(8,crisis.intensity-20);if(crisis.intensity<=26)EMCrisis.containCrisis(crisis,`uma mediação conduzida por ${PLAYER.nome}`);}addTension(-6,`${PLAYER.nome} abre uma mesa de negociação para ${c.name}.`);effectMessage('🕊️','Mediação com resultado',`${c.name}: intensidade caiu de ${Math.round(before)}% para ${Math.round(c.intensity)}%. Os dois lados aceitaram manter um canal de negociação.`,'good');rerenderWorld();}
   function humanitarianAid(c){if(!PLAYER||!c)return;const cost=PLAYER.pib*.006;if(PLAYER.caixa<cost){effectMessage('⚠️','Ajuda não enviada',`A operação custa ${money(cost)}, mas o Tesouro não possui recursos suficientes.`,'warn');return;}const before=c.intensity,crisis=relatedCrisis(c);PLAYER.caixa-=cost;PLAYER.legitimidade+=4;PLAYER.diplo+=4;c.intensity=Math.max(8,c.intensity-7);[nation(c.a),nation(c.b)].forEach(n=>{if(n){n.saude=clamp(n.saude+3,0,100);n.estabilidade=clamp(n.estabilidade+1.5,0,100);EMWorld.changeRelation(PLAYER,n,5);}});if(crisis)crisis.intensity=Math.max(10,crisis.intensity-10);effectMessage('✚','Comboios humanitários chegaram',`${money(cost)} financiaram hospitais, alimentos e retirada de civis em ${c.name}. Intensidade: ${Math.round(before)}% → ${Math.round(c.intensity)}%.`,'good');rerenderWorld();}
-  function joinSide(c,allyName){if(!PLAYER||!c)return;const ally=nation(allyName),enemy=nation(allyName===c.a?c.b:c.a);if(!ally||!enemy)return;if(PLAYER.emGuerra){effectMessage('⚠️','Intervenção bloqueada',`Seu país já está em guerra contra ${PLAYER.warTarget?.nome||'outro país'}. Encerre esse conflito antes de abrir uma nova frente.`,'warn');return;}const cpCost=2,cashCost=PLAYER.pib*.018;if(cp<cpCost){effectMessage('⚠️','Capital político insuficiente',`Entrar em ${c.name} exige ${cpCost} pontos de ação. Você possui ${cp}.`,'warn');return;}if(PLAYER.caixa<cashCost){effectMessage('⚠️','Operação sem financiamento',`A entrada na guerra exige ${money(cashCost)}. O caixa atual é ${money(PLAYER.caixa)}.`,'warn');return;}cp-=cpCost;PLAYER.caixa-=cashCost;PLAYER.emGuerra=true;PLAYER.warTarget=enemy;PLAYER.warDias=0;PLAYER.warStrength=clamp(PLAYER.mil+8,10,100);enemy.warStrength=clamp(enemy.mil+Math.random()*10,10,100);PLAYER.aprovacao-=7;PLAYER.diplo-=8;PLAYER.legitimidade-=4;EMWorld.changeRelation(PLAYER,ally,24);EMWorld.changeRelation(PLAYER,enemy,-100);c.intensity=clamp(c.intensity+14,0,100);drawWarArc(PLAYER,enemy);spawnWarUnits(PLAYER,enemy);pulseImpact(enemy);addTension(14,`${PLAYER.nome} entra em ${c.name} ao lado de ${ally.nome}.`);const ev={kind:'military',icon:'⚔️',title:c.name,text:`${PLAYER.nome} entra na guerra ao lado de ${ally.nome}`,color:'#fb4b64',a:ally,b:enemy,id:Date.now()+Math.random(),created:Date.now(),severity:c.intensity,lifeState:'escalated',startedDay:dia,deadlineDay:dia+40,escalations:1};mapLiveEvents.unshift(ev);mapLiveEvents=mapLiveEvents.slice(0,4);spawnMapEventVisual(ev);window.EMCrisis?.ensureCrisis(ev);effectMessage('⚔️',`${PLAYER.nome} entra na guerra`,`${PLAYER.nome} agora combate ${enemy.nome} ao lado de ${ally.nome}. Custo: 2 ações e ${money(cashCost)}.`,'war');headline(`⚔️ ${flag(PLAYER.nome)} + ${flag(ally.nome)} vs ${flag(enemy.nome)}`,true);document.getElementById('strategyPanel')?.classList.remove('on');syncMajorPanels();renderMapActivity();refresh();}
+  function joinSide(c,allyName){if(!PLAYER||!c)return;const ally=nation(allyName),enemy=nation(allyName===c.a?c.b:c.a);if(!ally||!enemy)return;if(PLAYER.emGuerra){effectMessage('⚠️','Intervenção bloqueada',`Seu país já está em guerra contra ${PLAYER.warTarget?.nome||'outro país'}. Encerre esse conflito antes de abrir uma nova frente.`,'warn');return;}const cpCost=2,cashCost=PLAYER.pib*.018;if(cp<cpCost){effectMessage('⚠️','Capital político insuficiente',`Entrar em ${c.name} exige ${cpCost} pontos de ação. Você possui ${cp}.`,'warn');return;}if(PLAYER.caixa<cashCost){effectMessage('⚠️','Operação sem financiamento',`A entrada na guerra exige ${money(cashCost)}. O caixa atual é ${money(PLAYER.caixa)}.`,'warn');return;}cp-=cpCost;PLAYER.caixa-=cashCost;PLAYER.emGuerra=true;PLAYER.warTarget=enemy;PLAYER.warDias=0;PLAYER.warStrength=clamp(PLAYER.mil+8,10,100);enemy.warStrength=clamp(enemy.mil+Math.random()*10,10,100);PLAYER.aprovacao-=7;PLAYER.diplo-=8;PLAYER.legitimidade-=4;EMWorld.changeRelation(PLAYER,ally,24);EMWorld.changeRelation(PLAYER,enemy,-100);c.intensity=clamp(c.intensity+14,0,100);drawWarArc(PLAYER,enemy);spawnWarUnits(PLAYER,enemy);pulseImpact(enemy);addTension(14,`${PLAYER.nome} entra em ${c.name} ao lado de ${ally.nome}.`);const ev={kind:'military',icon:'⚔️',title:c.name,text:`${PLAYER.nome} entra na guerra ao lado de ${ally.nome}`,color:'#fb4b64',a:ally,b:enemy,id:Date.now()+Math.random(),created:Date.now(),severity:c.intensity,lifeState:'escalated',startedDay:dia,deadlineDay:dia+40,escalations:1};mapLiveEvents.unshift(ev);mapLiveEvents=mapLiveEvents.slice(0,12);spawnMapEventVisual(ev);window.EMCrisis?.ensureCrisis(ev);effectMessage('⚔️',`${PLAYER.nome} entra na guerra`,`${PLAYER.nome} agora combate ${enemy.nome} ao lado de ${ally.nome}. Custo: 2 ações e ${money(cashCost)}.`,'war');headline(`⚔️ ${flag(PLAYER.nome)} + ${flag(ally.nome)} vs ${flag(enemy.nome)}`,true);document.getElementById('strategyPanel')?.classList.remove('on');syncMajorPanels();renderMapActivity();refresh();}
   function chooseWarSide(c){if(!c)return;const a=nation(c.a),b=nation(c.b),cost=PLAYER.pib*.018;showPopup('⚔️',`ENTRAR EM ${c.name.toUpperCase()}`,`Escolha um lado. A intervenção custa 2 pontos de ação e ${money(cost)}. Você passará a combater diretamente o adversário e não poderá entrar em outra guerra até conseguir paz.`,[{l:`Apoiar ${flag(a.nome)} ${a.nome}`,t:`Entrar na guerra contra ${b.nome}.`,efeito:`2 ações · −${money(cost)} · relação ${a.nome} +24`,war:true,go:()=>joinSide(c,a.nome),msg:`Apoio a ${a.nome} escolhido`},{l:`Apoiar ${flag(b.nome)} ${b.nome}`,t:`Entrar na guerra contra ${a.nome}.`,efeito:`2 ações · −${money(cost)} · relação ${b.nome} +24`,war:true,go:()=>joinSide(c,b.nome),msg:`Apoio a ${b.nome} escolhido`},{l:'Permanecer fora da guerra',t:'Continuar apenas com diplomacia e ajuda.',efeito:'Sem custo',go:()=>{},msg:'Neutralidade mantida'}]);}
   function enhanceWorldCards(){if(!strategyBody)return;strategyBody.querySelectorAll('[data-mediate]').forEach(btn=>{const name=btn.dataset.mediate,actions=btn.closest('.strategicActions'),card=btn.closest('.strategicCard');if(actions&&!actions.querySelector(`[data-join-war="${CSS.escape(name)}"]`)){actions.insertAdjacentHTML('beforeend',`<button class="joinWarStrategy" data-join-war="${name}">⚔ ENTRAR NA GUERRA</button>`);card?.insertAdjacentHTML('beforeend','<span class="strategyEffect">MEDIAR: 2 influência · AJUDA: 0,6% do PIB · GUERRA: 2 ações + 1,8% do PIB</span>');}});}
 
@@ -2872,6 +2872,41 @@ body.major-panel-open #missionPanel,body.major-panel-open #mapActivity,body.majo
   const startV21=startGame;startGame=function(n){const r=startV21(n);try{const saved=JSON.parse(localStorage.getItem('estadoMaior.v21.conflicts')||'null');(saved||[]).forEach(s=>{const c=conflictByName(s.name);if(c){c.intensity=s.intensity;c.front=s.front;}});}catch(e){}setTimeout(enhanceWorldCards,50);return r;};
   window.addEventListener('beforeunload',()=>{if(window.EMStrategy)localStorage.setItem('estadoMaior.v21.conflicts',JSON.stringify(EMStrategy.conflicts.map(c=>({name:c.name,intensity:c.intensity,front:c.front}))));});
   window.EMUI={closeMajor,syncMajorPanels,mediate,humanitarianAid,chooseWarSide};
+})();
+</script>
+
+<script>
+/* ===== V22 — reinício seguro de campanha ===== */
+(function(){
+  const RESET_FLAG='estadoMaior.freshStart';
+  const PREFERENCES=new Set(['estadoMaior.clean','estadoMaior.globePaused']);
+
+  function clearCampaignProgress(){
+    Object.keys(localStorage).forEach(key=>{
+      if(key.startsWith('estadoMaior.')&&!PREFERENCES.has(key))localStorage.removeItem(key);
+    });
+  }
+
+  /* Uma segunda limpeza após a recarga vence qualquer salvamento automático
+     disparado pelo beforeunload da partida anterior. */
+  if(sessionStorage.getItem(RESET_FLAG)==='1'){
+    clearCampaignProgress();
+    sessionStorage.removeItem(RESET_FLAG);
+    const continueButton=document.getElementById('continueGame');
+    if(continueButton)continueButton.style.display='none';
+  }
+
+  const button=document.getElementById('newGameButton');
+  if(!button)return;
+  button.addEventListener('click',event=>{
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    sessionStorage.setItem(RESET_FLAG,'1');
+    playing=false;
+    PLAYER=null;
+    clearCampaignProgress();
+    location.reload();
+  },true);
 })();
 </script>
 

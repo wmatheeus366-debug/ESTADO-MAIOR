@@ -1,0 +1,170 @@
+/* Estado Maior V33 — reorganização do layout superior
+   Resolve sobreposições entre Mundo ao Vivo, Central Estratégica,
+   Situação Mundial, controles de tempo/globo e war ticker */
+
+/* ====================================================
+   LINHA 1 (top: 82px) — só o topBar existe aqui
+   LINHA 2 (top: 84px) — controles à direita do topBar
+   LINHA 3 (top: 158px) — painéis informativos da esquerda
+   LINHA 4 (top: 158px) — mundo ao vivo no centro
+   LINHA 5 (top: 158px) — doom e war ticker abaixo
+==================================================== */
+
+/* ---- CONTROLES DE TEMPO E GLOBO ----
+   Move para dentro do clockBox, alinhado com a velocidade */
+#simulationControls {
+  position: fixed !important;
+  right: 374px !important;
+  top: 82px !important;
+  z-index: 20 !important;
+  flex-direction: row !important;
+  gap: 5px !important;
+}
+.simControl {
+  min-height: 28px !important;
+  padding: 4px 9px !important;
+  font-size: 8px !important;
+  border-radius: 8px !important;
+}
+
+/* ---- MUNDO AO VIVO ----
+   Sobe para linha 2, alinhado com o centro do topBar */
+#worldStatus {
+  top: 82px !important;
+  z-index: 20 !important;
+}
+
+/* ---- SITUAÇÃO MUNDIAL (mapActivity) ----
+   Fica na esquerda, abaixo da linha 1 */
+#mapActivity {
+  top: 84px !important;
+  left: 176px !important;
+}
+
+/* ---- CENTRAL ESTRATÉGICA ----
+   Logo abaixo do topBar, lado esquerdo do centro */
+#strategyCommandV25 {
+  top: 84px !important;
+}
+
+/* ---- MISSÃO DE TURNO (V29) ----
+   Desce para não colidir com mapActivity */
+#missionHudV29 {
+  top: 84px !important;
+  left: 88px !important;
+  max-width: 200px !important;
+  display: none !important; /* esconde — info já está no topBar */
+}
+
+/* ---- WAR TICKER (V32) ----
+   Vai para linha 3, abaixo dos painéis de info */
+#warTickerV32 {
+  top: auto !important;
+  bottom: 178px !important;
+  left: 88px !important;
+  right: auto !important;
+  transform: none !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  max-width: 300px !important;
+}
+.warPairV32 {
+  font-size: 9px !important;
+}
+
+/* ---- DOOM STATUS ----
+   Abaixo do Mundo ao Vivo, centralizado */
+#doomStatus {
+  top: 152px !important;
+  z-index: 18 !important;
+}
+
+/* ---- DOOM BANNER (V30) ----
+   Logo abaixo do topBar, sobre o globo */
+#doomBannerV30 {
+  top: 84px !important;
+  z-index: 296 !important;
+}
+
+/* ---- DOOM ALERT BORDER (V30) ----
+   Mantém z-index correto */
+#doomAlertV30 { z-index: 295 !important; }
+
+/* ---- RELÓGIO / VELOCIDADE ----
+   Alinha com os controles */
+#clockBox {
+  top: 18px !important;
+  right: 374px !important;
+  z-index: 82 !important;
+}
+
+/* ---- SOM TOGGLE (V31) ----
+   Move para junto do clockBox */
+#soundToggleV31 {
+  position: fixed !important;
+  right: 374px !important;
+  top: 100px !important;
+  z-index: 20 !important;
+  display: none !important;
+}
+body.game-on #soundToggleV31 { display: flex !important; }
+
+/* ---- LEGACY GAUGE (V31) ----
+   Permanece no statRow (já está lá) */
+
+/* ---- CHAPTER BANNER ----
+   Desce para não colidir */
+#chapterBanner {
+  top: 158px !important;
+}
+
+/* ---- COMBO TOAST ----
+   Ajuste de posição */
+#comboToast {
+  top: 158px !important;
+}
+
+/* ---- WAR HUD (guerra do jogador) ----
+   Desce um pouco */
+#warHud {
+  top: 158px !important;
+}
+
+/* ---- HEADLINE ----
+   Desce junto */
+#hl {
+  top: 158px !important;
+}
+
+/* ---- AI LOADER ----
+   Posição mantida */
+
+/* ===== MEDIA QUERIES ===== */
+@media(max-width:1199px) and (min-width:821px) {
+  #simulationControls { right: 324px !important; }
+  #clockBox { right: 324px !important; }
+  #soundToggleV31 { right: 324px !important; }
+}
+
+@media(max-width:820px) {
+  #simulationControls {
+    right: 8px !important;
+    top: 68px !important;
+    flex-direction: column !important;
+  }
+  #warTickerV32 {
+    bottom: 90px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-width: none !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+  }
+  #doomStatus { top: 160px !important; }
+  #soundToggleV31 { display: none !important; }
+  #warHud { top: 118px !important; }
+  #hl { top: 118px !important; }
+  #chapterBanner { top: 128px !important; }
+  #comboToast { top: 128px !important; }
+}

@@ -1987,3 +1987,84 @@ document.addEventListener('pointerdown',e=>{
   if($('financePanel')?.classList.contains('on')||$('politicsPanel')?.classList.contains('on')){closeDesktopPanels();syncRailState('map');}
 });
 </script>
+
+<style>
+/* ===== PATCH V10 — layout sem sobreposição e eventos realmente jogáveis ===== */
+@media (min-width:1200px){
+  #actionBar{bottom:8px!important;max-height:170px!important}
+  #worldTicker{bottom:186px!important;min-height:30px!important;z-index:58!important}
+  #groupBar{bottom:228px!important}
+  #mapActivity{bottom:226px!important}
+  #financePanel{left:450px!important;top:88px!important;bottom:auto!important;max-height:42vh!important}
+  #politicsPanel{right:342px!important;top:88px!important;bottom:auto!important;max-height:42vh!important}
+  #dossier{right:330px!important}
+  body.dossier-open #feedShell{opacity:1!important;pointer-events:auto!important;transform:none!important}
+}
+#worldTicker{pointer-events:none}
+.mapEventCard{display:grid!important;grid-template-columns:34px minmax(0,1fr) auto!important;grid-template-areas:"icon copy time" "icon actions actions";gap:4px 8px!important;padding:10px!important;text-align:left!important}
+.mapEventCard .mapEventIcon{grid-area:icon}
+.mapEventCard>span:nth-child(2){grid-area:copy;min-width:0}
+.mapEventCard>em{grid-area:time;align-self:start}
+.mapEventActions{grid-area:actions;display:flex;gap:6px;justify-content:flex-end;margin-top:5px}
+.mapEventActions button{border:1px solid rgba(56,189,248,.3);background:rgba(56,189,248,.09);color:#8be7ff;border-radius:7px;padding:5px 8px;font:800 7px var(--mono);letter-spacing:.06em;cursor:pointer}
+.mapEventActions button.primary{background:rgba(34,211,238,.16);border-color:rgba(34,211,238,.5);color:#d9fbff}
+.mapEventActions button:hover{filter:brightness(1.25)}
+.railBtn.active{background:rgba(34,211,238,.12)!important;color:#7cecff!important}
+@media(max-width:820px){
+ #worldTicker{bottom:70px!important;left:8px!important;right:8px!important;z-index:35!important}
+ .mapEventCard{grid-template-columns:32px minmax(0,1fr)!important}
+}
+</style>
+<script>
+/* ===== PATCH V10 — comportamento final ===== */
+(function(){
+  const panelMap={radar:'feedShell',actions:'actionBar',treasury:'financePanel',congress:'politicsPanel'};
+  function updateRailButton(name,on){
+    const b=document.querySelector(`.railBtn[data-rail="${name}"]`);
+    if(b){b.classList.toggle('active',on);b.setAttribute('aria-expanded',String(on));}
+  }
+  function toggleIndependentPanel(name){
+    const id=panelMap[name],el=id&&document.getElementById(id);if(!el)return;
+    if(typeof isMobileUI==='function'&&isMobileUI()){
+      Object.entries(panelMap).forEach(([k,pid])=>{if(k!==name){document.getElementById(pid)?.classList.remove('on');updateRailButton(k,false);}});
+    }
+    const on=!el.classList.contains('on');el.classList.toggle('on',on);updateRailButton(name,on);
+    if(name==='congress'&&on&&typeof updatePoliticsHud==='function')updatePoliticsHud();
+  }
+  function command(name){
+    if(!PLAYER&&!['map','help'].includes(name))return;
+    if(name==='map'){
+      if(PLAYER)focusNation(PLAYER,1.7);else World.pointOfView({lat:12,lng:-18,altitude:2.25},700);
+      return;
+    }
+    if(panelMap[name]){toggleIndependentPanel(name);return;}
+    if(name==='country'&&PLAYER){openDossier(PLAYER);updateRailButton('country',true);return;}
+    if(name==='help')showPopup('🧭','Central de comando','No desktop, Radar, Ações, Caixa e Congresso são independentes. Em Acontecendo agora, use PARTICIPAR para tomar uma decisão ou VER NO MAPA para apenas localizar o evento.',[{l:'Entendi',t:'Voltar ao jogo',go:()=>{},msg:'Ajuda fechada'}]);
+  }
+  document.querySelectorAll('.railBtn[data-rail]').forEach(old=>{
+    const btn=old.cloneNode(true);old.replaceWith(btn);btn.addEventListener('click',()=>command(btn.dataset.rail));
+  });
+
+  // Não fechar outros painéis quando um país é consultado no desktop.
+  const dossierBase=openDossier;
+  openDossier=function(n){
+    const r=dossierBase(n);document.body.classList.add('dossier-open');updateRailButton('country',true);return r;
+  };
+  const dc=document.getElementById('dClose');if(dc)dc.onclick=()=>{document.getElementById('dossier')?.classList.remove('on');document.body.classList.remove('dossier-open');updateRailButton('country',false);};
+
+  // Todo evento possui ação explícita para participar.
+  renderMapActivity=function(){
+    const list=document.getElementById('mapActivityList'),count=document.getElementById('mapActivityCount');if(!list)return;
+    count.textContent=mapLiveEvents.length;
+    list.innerHTML=mapLiveEvents.map((e,i)=>`<article class="mapEventCard" data-index="${i}"><span class="mapEventIcon">${e.icon}</span><span><strong>${e.title}</strong><small>${flag(e.a.nome)} ${e.a.nome}${['trade','military','diplomacy','aid'].includes(e.kind)?` → ${flag(e.b.nome)} ${e.b.nome}`:''}</small></span><em>AGORA</em><div class="mapEventActions"><button data-view="${i}">VER NO MAPA</button><button class="primary" data-participate="${i}">PARTICIPAR</button></div></article>`).join('');
+    list.querySelectorAll('[data-view]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();const ev=mapLiveEvents[+btn.dataset.view];if(ev)focusNation(ev.kind==='military'?ev.b:ev.a,1.45);});
+    list.querySelectorAll('[data-participate]').forEach(btn=>btn.onclick=e=>{e.stopPropagation();const ev=mapLiveEvents[+btn.dataset.participate];if(ev)participateMapEvent(ev);});
+    list.querySelectorAll('.mapEventCard').forEach(card=>card.onclick=()=>{const ev=mapLiveEvents[+card.dataset.index];if(ev)participateMapEvent(ev);});
+  };
+  setTimeout(()=>{if(typeof renderMapActivity==='function')renderMapActivity();},50);
+
+  // Garante estado inicial conjunto no desktop.
+  const startBase=startGame;
+  startGame=function(n){const r=startBase(n);if(!(typeof isMobileUI==='function'&&isMobileUI())){document.getElementById('feedShell')?.classList.add('on');document.getElementById('actionBar')?.classList.add('on');updateRailButton('radar',true);updateRailButton('actions',true);}return r;};
+})();
+</script>

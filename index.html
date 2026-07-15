@@ -1045,9 +1045,9 @@ const HW_MEMORY=navigator.deviceMemory||4;
 const SMALL_SCREEN=Math.min(innerWidth,innerHeight)<760;
 const PERF_LEVEL=(REDUCED_MOTION||SMALL_SCREEN||HW_THREADS<=4||HW_MEMORY<=4)?'low':(HW_THREADS>=8&&HW_MEMORY>=8?'high':'medium');
 const PERF={
-  low:{pixelRatio:1,targetFps:30,unitInterval:145,ambientFlights:0,warTroops:5,warPlanes:2,markers:10,graticules:false,atmosphere:.12,feedLimit:14},
-  medium:{pixelRatio:1.15,targetFps:45,unitInterval:95,ambientFlights:3,warTroops:7,warPlanes:3,markers:18,graticules:true,atmosphere:.15,feedLimit:18},
-  high:{pixelRatio:1.35,targetFps:60,unitInterval:66,ambientFlights:5,warTroops:9,warPlanes:4,markers:28,graticules:true,atmosphere:.17,feedLimit:22}
+  low:{pixelRatio:.75,targetFps:60,unitInterval:220,ambientFlights:0,warTroops:0,warPlanes:0,markers:7,graticules:false,atmosphere:.08,feedLimit:10},
+  medium:{pixelRatio:.9,targetFps:60,unitInterval:160,ambientFlights:0,warTroops:0,warPlanes:0,markers:10,graticules:false,atmosphere:.10,feedLimit:14},
+  high:{pixelRatio:1.05,targetFps:60,unitInterval:110,ambientFlights:0,warTroops:0,warPlanes:0,markers:13,graticules:false,atmosphere:.12,feedLimit:17}
 }[PERF_LEVEL];
 document.body.classList.toggle('perf-low',PERF_LEVEL==='low');
 const perfBadge=$('perfBadge');if(perfBadge){perfBadge.textContent=`${PERF_LEVEL==='low'?'economia':PERF_LEVEL==='medium'?'equilibrado':'alto'} · ${PERF.targetFps} fps`;perfBadge.classList.add('on');setTimeout(()=>perfBadge.classList.remove('on'),3200);}
@@ -2922,6 +2922,8 @@ body.major-panel-open #missionPanel,body.major-panel-open #mapActivity,body.majo
 <script src="v25.js"></script>
 <link rel="stylesheet" href="v27.css">
 <script src="v27.js"></script>
+<link rel="stylesheet" href="v28.css">
+<script src="v28.js"></script>
 
 
 

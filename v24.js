@@ -6,6 +6,7 @@
   const englishAliases={
     'Estados Unidos':'United States of America','Rússia':'Russia','Ucrânia':'Ukraine','Irã':'Iran','Israel':'Israel','Coreia do Norte':'North Korea','Coreia do Sul':'South Korea','China':'China','Taiwan':'Taiwan','Sudão':'Sudan','Sudão do Sul':'South Sudan','Arábia Saudita':'Saudi Arabia','Iêmen':'Yemen','Armênia':'Armenia','Azerbaijão':'Azerbaijan','Brasil':'Brazil','Alemanha':'Germany','França':'France','Reino Unido':'United Kingdom','Espanha':'Spain','Itália':'Italy','Índia':'India','Japão':'Japan','Turquia':'Turkey','Síria':'Syria','Iraque':'Iraq','Venezuela':'Venezuela','Bolívia':'Bolivia','Tchéquia':'Czechia','República Democrática do Congo':'Dem. Rep. Congo','República do Congo':'Congo','República Centro-Africana':'Central African Rep.','Macedônia do Norte':'North Macedonia','Bósnia e Herzegovina':'Bosnia and Herz.','Costa do Marfim':"Côte d'Ivoire",'Myanmar':'Myanmar','Laos':'Laos','Vietnã':'Vietnam','Camboja':'Cambodia','Palestina':'Palestine','Kosovo':'Kosovo'
   };
+  const baseIso2={'Brasil':'BR','Argentina':'AR','Chile':'CL','Colômbia':'CO','Peru':'PE','Venezuela':'VE','México':'MX','Estados Unidos':'US','Canadá':'CA','Cuba':'CU','Reino Unido':'GB','França':'FR','Alemanha':'DE','Espanha':'ES','Itália':'IT','Portugal':'PT','Polônia':'PL','Ucrânia':'UA','Rússia':'RU','Turquia':'TR','Suécia':'SE','Noruega':'NO','Egito':'EG','Nigéria':'NG','África do Sul':'ZA','Etiópia':'ET','Quênia':'KE','Marrocos':'MA','Argélia':'DZ','Israel':'IL','Arábia Saudita':'SA','Irã':'IR','Emirados Árabes':'AE','Índia':'IN','Paquistão':'PK','China':'CN','Japão':'JP','Coreia do Sul':'KR','Coreia do Norte':'KP','Indonésia':'ID','Vietnã':'VN','Tailândia':'TH','Cazaquistão':'KZ','Austrália':'AU','Nova Zelândia':'NZ','Uruguai':'UY','Paraguai':'PY','Bolívia':'BO','Equador':'EC','Países Baixos':'NL','Bélgica':'BE','Suíça':'CH','Áustria':'AT','Grécia':'GR','Romênia':'RO','Sérvia':'RS','República Democrática do Congo':'CD','Sudão':'SD','Tanzânia':'TZ','Gana':'GH','Iraque':'IQ','Síria':'SY','Jordânia':'JO','Catar':'QA','Líbano':'LB','Bangladesh':'BD','Filipinas':'PH','Malásia':'MY','Singapura':'SG','Taiwan':'TW','Mongólia':'MN','Afeganistão':'AF'};
   const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
   const nameForms=name=>new Set([normalize(name),normalize(englishAliases[name]||'')].filter(Boolean));
 
@@ -19,8 +20,8 @@
   }
   function featureNation(feature){
     if(!feature)return null;if(Object.prototype.hasOwnProperty.call(feature,'_emNation'))return feature._emNation;
-    const props=feature.properties||{},featureName=normalize(props.name||props.NAME||props.ADMIN||'');
-    feature._emNation=NATIONS.find(n=>nameForms(n.nome).has(featureName))||null;return feature._emNation;
+    const props=feature.properties||{},iso=String(feature.id||props.ISO_A2||props.iso_a2||'').toUpperCase(),featureName=normalize(props.name||props.NAME||props.NAME_EN||props.ADMIN||'');
+    feature._emNation=NATIONS.find(n=>String(n.iso||baseIso2[n.nome]||'').toUpperCase()===iso)||NATIONS.find(n=>nameForms(n.nome).has(featureName))||null;return feature._emNation;
   }
   function featureIsAtWar(feature){const n=featureNation(feature);return !!n&&warNames.has(n.nome);}
   function featureIsCollapsed(feature){const n=featureNation(feature);return !!n&&collapseNames.has(n.nome);}
@@ -51,7 +52,7 @@
       if(u.crisisId&&militaryCrises.has(u.crisisId)&&u.scope!=='crisis-point')return false;
       if(['tank','soldier','plane','ship','truck','car','explosion','ruin','fire'].includes(u.kind))return false;
       if(u.scope==='event-point'){const key=u.eventId||'event',n=perEvent.get(key)||0;perEvent.set(key,n+1);return n<1;}
-      if(u.scope==='crisis-point'){const key=u.markerId||u.crisisId||'crisis',n=perCrisis.get(key)||0;perCrisis.set(key,n+1);return n<1;}
+      if(u.scope==='crisis-point'){const key=u.crisisId||u.markerId||'crisis',n=perCrisis.get(key)||0;perCrisis.set(key,n+1);return n<1;}
       return counts.other++<(isMobile?4:7);
     });
     /* O mapa de calor e a borda do país já comunicam a guerra. Ondas e
@@ -72,7 +73,7 @@
     pruneVisuals();
     const result=layerBase();
     /* Garante que efeitos antigos salvos em memória também desapareçam. */
-    World.ringsData([]);
+    if((World.ringsData()||[]).length)World.ringsData([]);
     return result;
   };
   updateWarUnits=function(now=performance.now()){
@@ -100,16 +101,17 @@
   function loadBorders(){
     const status=document.getElementById('borderStatusV24');status?.classList.add('on');if(status)status.textContent='CARREGANDO FRONTEIRAS';
     if(!window.topojson){if(status)status.textContent='FRONTEIRAS INDISPONÍVEIS';setTimeout(()=>status?.classList.remove('on'),2200);return;}
-    const atlas=isMobile?'countries-110m.json':'countries-50m.json';
-    fetch(`https://cdn.jsdelivr.net/npm/world-atlas@2/${atlas}`,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error('fronteiras');return r.json();}).then(world=>{
-      boundaries=topojson.feature(world,world.objects.countries).features;
+    const isoAtlas='https://gist.githubusercontent.com/gregpabian/70933d92cd62ffc57216f943f98ff075/raw/f862941d33e2907f057471e617e938413f996997/countries.json',fallbackAtlas='https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+    const request=url=>fetch(url,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error('fronteiras');return r.json();});
+    request(isoAtlas).catch(()=>request(fallbackAtlas)).then(world=>{
+      const object=world.objects.countries||world.objects[Object.keys(world.objects)[0]];boundaries=topojson.feature(world,object).features;
       World.polygonsTransitionDuration(0).polygonSideColor(()=> 'rgba(0,0,0,0)').polygonLabel(f=>{const n=featureNation(f);return n?`<b>${n.nome}</b>${n._collapsed?'<br><span style="color:#aab2bc">ESTADO COLAPSADO</span>':''}`:'';}).onPolygonClick(f=>{const n=featureNation(f);if(n)openDossier(n);}).polygonsData(boundaries);
       refreshBoundaryColors();if(status)status.textContent=`${boundaries.length} FRONTEIRAS ATIVAS`;setTimeout(()=>status?.classList.remove('on'),1800);
     }).catch(()=>{if(status)status.textContent='FRONTEIRAS INDISPONÍVEIS';setTimeout(()=>status?.classList.remove('on'),2200);});
   }
 
   document.body.insertAdjacentHTML('beforeend','<div id="borderStatusV24">OTIMIZANDO MAPA</div>');
-  try{World.renderer().setPixelRatio(Math.min(devicePixelRatio,isMobile?.9:1.1));World.arcsTransitionDuration(0);World.controls().autoRotateSpeed=.22;}catch(e){}
+  try{World.renderer().setPixelRatio(Math.min(devicePixelRatio,isMobile?.72:.88));World.arcsTransitionDuration(0);World.controls().autoRotateSpeed=.16;World.showGraticules(false);if(PERF_LEVEL!=='high')World.bumpImageUrl(null);}catch(e){}
   pruneVisuals(true);updateWarAura(true);queueGlobeRefresh();
   (window.requestIdleCallback||function(cb){setTimeout(cb,700);})(loadBorders,{timeout:2500});
   setInterval(()=>{pruneVisuals();updateWarAura();queueGlobeRefresh();},2500);

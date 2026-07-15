@@ -187,9 +187,10 @@
   }
   function activeWarPairs(){
     const pairs=[];const add=(a,b,title,intensity=70)=>{a=nationOf(a);b=nationOf(b);if(!a||!b)return;const key=[a.nome,b.nome].sort().join('|');if(!pairs.some(p=>p.key===key))pairs.push({key,a,b,title,intensity});};
+    if(PLAYER?.emGuerra&&PLAYER.warTarget)add(PLAYER,PLAYER.warTarget,`${PLAYER.nome} × ${PLAYER.warTarget.nome}`,85);
     (window.EMStrategy?.conflicts||[]).filter(c=>c.intensity>=50).forEach(c=>add(c.a,c.b,c.name,c.intensity));
     (window.EMCrisis?.crises||[]).filter(c=>!c.contained&&c.kind==='military').forEach(c=>{const ns=(c.nations||[]).slice(-2);if(ns.length>1)add(ns[0],ns[1],c.title,c.intensity);});
-    if(PLAYER?.emGuerra&&PLAYER.warTarget)add(PLAYER,PLAYER.warTarget,`${PLAYER.nome} × ${PLAYER.warTarget.nome}`,85);return pairs.slice(0,3);
+    return pairs.slice(0,1);
   }
   function warUnitData(){const out=[];activeWarPairs().forEach((p,index)=>{const midLat=(p.a.lat+p.b.lat)/2,midLng=shortestLng(p.a.lng,p.b.lng,.5),offset=(index-1)*.6;out.push({id:`${p.key}:tank`,kind:'tank',lat:p.a.lat+.45,lng:p.a.lng+.55,side:0,nation:p.a,pair:p,label:`Tanques de ${p.a.nome} · ${p.title}`},{id:`${p.key}:jet`,kind:'jet',lat:midLat+1.2+offset,lng:midLng,side:0,nation:p.a,pair:p,label:`Caças em operação · ${p.title}`},{id:`${p.key}:missile`,kind:'missile',lat:p.b.lat-.35,lng:p.b.lng-.45,side:1,nation:p.b,pair:p,label:`Bateria de mísseis de ${p.b.nome}`},{id:`${p.key}:ship`,kind:p.intensity>78?'carrier':'ship',lat:midLat-1.6,lng:midLng+2.2,side:1,nation:p.b,pair:p,label:`Força naval mobilizada · ${p.title}`});});return out.slice(0,12);}
   function syncWarUnits3D(force=false){
@@ -211,6 +212,6 @@
   createTurnUI();installMarketTab();installFlagMarkers();loadMarket();
   window.addEventListener('beforeunload',()=>{persistMarket();try{localStorage.setItem(TURN_STORE,JSON.stringify({turnNo}));}catch(e){}});
   window.EMTurn={endTurn,beginTurn,get report(){return lastReport;},get number(){return turnNo;}};
-  window.EMMarket={render:renderMarket,catalog:sellerCatalog,terms:tradeTerms,flagHTML};
+  window.EMMarket={render:renderMarket,catalog:sellerCatalog,terms:tradeTerms,flagHTML,isoOf};
   window.EMMilitary3D={sync:syncWarUnits3D};
 })();

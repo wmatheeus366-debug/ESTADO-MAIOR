@@ -400,6 +400,86 @@ body.game-on #missionHudV29 { display: block; }
   border-top-color: rgba(125,211,252,.25);
 }
 
+/* ===== LEGIBILIDADE GLOBAL V29 =====
+   Sobe todos os textos minúsculos para tamanhos
+   realmente legíveis sem quebrar o layout.
+============================================= */
+
+/* Cards de crise / evento no mapa */
+.mapEventCard strong { font-size: 13px !important; line-height: 1.35 !important; }
+.mapEventCard small  { font-size: 11px !important; line-height: 1.4  !important; }
+.mapEventCard em     { font-size: 9px  !important; }
+.mapEventActions button { font-size: 10px !important; min-height: 30px !important; padding: 5px 10px !important; }
+.eventLifeTop span, .eventLifeTop b { font-size: 9px !important; }
+
+/* Doom status */
+.doomTop  { font-size: 9px  !important; }
+.doomTop b { font-size: 12px !important; }
+.doomText  { font-size: 11px !important; line-height: 1.5 !important; }
+
+/* Stats do HUD (topBar) */
+.sc .sl { font-size: 9px !important; letter-spacing: .06em !important; }
+.sc .sv { font-size: 16px !important; }
+
+/* Ações no bottom bar */
+.acard .at  { font-size: 11px !important; }
+.acard .ac,
+.acard .am  { font-size: 9px !important; }
+.actionVote { font-size: 9px !important; }
+.actionReason { font-size: 9px !important; }
+.eco .el    { font-size: 10px !important; }
+.eco .ev2   { font-size: 16px !important; }
+
+/* Rail esquerdo — labels dos botões */
+.railBtn b  { font-size: 10px !important; }
+.railBottom { font-size: 10px !important; }
+
+/* Abas de ação (ECONOMIA, BEM-ESTAR, etc.) */
+.actionTab  { font-size: 10px !important; }
+
+/* Situation / painel de prioridades */
+.situationCard small  { font-size: 9px  !important; }
+.situationCard strong { font-size: 14px !important; }
+.situationCard p      { font-size: 11px !important; line-height: 1.5 !important; }
+.situationActions button { font-size: 9px !important; min-height: 34px !important; }
+
+/* Feed / boletim */
+.btxt         { font-size: 12px !important; line-height: 1.55 !important; }
+.btxt strong  { font-size: 13px !important; }
+.bhandle,
+.bitem .btime { font-size: 10px !important; }
+
+/* Dossiê */
+.ds .dl { font-size: 10px !important; }
+.ds .dv { font-size: 16px !important; }
+.dbtn   { font-size: 11px !important; min-height: 44px !important; }
+
+/* Mercado */
+.marketItemV27 small  { font-size: 9px  !important; }
+.marketItemV27 strong { font-size: 12px !important; }
+.marketItemV27 p      { font-size: 10px !important; }
+.marketBuyRowV27 button { font-size: 9px !important; min-height: 34px !important; }
+
+/* Popup de decisão */
+.popt         { font-size: 13px !important; }
+.popt .pl     { font-size: 10px !important; }
+.popt .pe     { font-size: 10px !important; }
+
+/* Resultado imediato da ação (V28) */
+.actionResultHeadV28 small  { font-size: 9px  !important; }
+.actionResultHeadV28 strong { font-size: 12px !important; }
+.actionLevelV28 small       { font-size: 9px  !important; }
+.actionLevelV28 b           { font-size: 11px !important; }
+.actionLevelV28 em          { font-size: 9px  !important; }
+
+/* Ticker mundial */
+.tickerTag  { font-size: 9px  !important; }
+#tickerText { font-size: 10px !important; }
+
+/* Missões */
+.missionItem     { font-size: 11px !important; }
+.missionItem em  { font-size: 9px  !important; }
+
 /* Mobile adjustments */
 @media(max-width:820px) {
   #missionHudV29 {

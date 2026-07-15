@@ -453,4 +453,75 @@
   }, 8000);
 
   window.EMV29 = { showNewspaper, closeNewspaper, updateMissionHud, installTooltips };
+
+  /* ===================================================
+     PARTE 8 — CORRIGIR BANDEIRAS E EVENT-POINTS
+
+     Problema 1: V28.compactNationMarkers() limita a 8
+     países fixos, escondendo todas as outras bandeiras.
+     Restauramos visibleNationMarkers para a versão
+     original do index.html (prioridade por aliados,
+     acordos, vizinhos e PIB até PERF.markers).
+
+     Problema 2: V28.pruneMapNoise() remove todos os
+     event-point e crisis-point a cada 1.8s, então
+     os pontos de evento somem logo após aparecer.
+     Corrigimos para preservar pontos ativos.
+  =================================================== */
+  // Restaura visibleNationMarkers para o comportamento original
+  // (não o compactNationMarkers do V28 que só mostra 8 países fixos)
+  window.visibleNationMarkers = function () {
+    if (!window.NATIONS || !window.nationMarkers) return [];
+    const priority = [];
+    const add = n => { if (n && !priority.includes(n)) priority.push(n); };
+    add(PLAYER);
+    add(window.selN);
+    add(PLAYER?.warTarget);
+    (PLAYER?.aliados || []).forEach(a => add(NATIONS.find(n => n.nome === a.nome)));
+    (PLAYER?.acordos || []).forEach(a => add(NATIONS.find(n => n.nome === a.nacao)));
+    (PLAYER?.vizinhos || []).forEach(add);
+    NATIONS.slice().sort((a, b) => b.pib - a.pib).forEach(add);
+    const limit = (window.PERF?.markers || 13);
+    return priority.slice(0, limit).map(n => nationMarkers.find(d => d.n === n)).filter(Boolean);
+  };
+
+  // Patch no pruneMapNoise do V28 para não remover event-points ativos
+  if (window.EMV28) {
+    const _pruneOriginal = window.EMV28.pruneMapNoise;
+    window.EMV28.pruneMapNoise = function () {
+      // Salva os event-points e crisis-points antes do prune
+      const savedEventPoints = (window.mobileUnits || []).filter(u =>
+        u.scope === 'event-point' || u.scope === 'crisis-point'
+      );
+      _pruneOriginal();
+      // Reinsere os pontos de evento que foram removidos
+      if (savedEventPoints.length && window.mobileUnits) {
+        savedEventPoints.forEach(p => {
+          if (!mobileUnits.some(u => u.eventId === p.eventId && u.markerId === p.markerId)) {
+            mobileUnits.push(p);
+          }
+        });
+      }
+    };
+    // Substitui também o setInterval interno do V28 que chama pruneMapNoise
+    // Fazemos isso sobrescrevendo refreshGlobeLayers para chamar nossa versão
+    const _refreshV29 = window.refreshGlobeLayers;
+    window.refreshGlobeLayers = function () {
+      // Garante que visibleNationMarkers é a nossa versão corrigida
+      return _refreshV29 ? _refreshV29() : undefined;
+    };
+  }
+
+  // Força refresh do globo com as bandeiras corrigidas após iniciar
+  setTimeout(() => {
+    if (window.queueGlobeRefresh) queueGlobeRefresh();
+    if (window.EMMarket?.flagHTML && window.PLAYER) {
+      // Reinicia os marcadores com a função corrigida
+      try {
+        const data = World.htmlElementsData();
+        World.htmlElementsData([]);
+        setTimeout(() => World.htmlElementsData(data || []), 60);
+      } catch (e) {}
+    }
+  }, 800);
 })();

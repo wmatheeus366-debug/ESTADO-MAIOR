@@ -362,6 +362,33 @@ body.perf-low #worldTicker,body.perf-low #comboToast{display:none!important}
   .quickCountries{grid-template-columns:1fr!important}
 }
 
+
+
+/* ===== GAMEPLAY & READABILITY V3 ===== */
+:root{--uiScale:1.12}
+body{font-size:16px}
+.btxt{font-size:13.5px!important;line-height:1.55!important}.btxt strong{font-size:15px!important}.bitem .btime,.bhandle{font-size:10px!important}.bactions button{font-size:11px!important}
+.sc .sv{font-size:18px!important}.sc .sl{font-size:9px!important}.eco .el{font-size:10px!important}.eco .ev2{font-size:19px!important}
+.acard{min-width:94px!important;max-width:108px!important;padding:11px 12px!important}.acard .ai{font-size:27px!important}.acard .at{font-size:11px!important}.acard .ac,.acard .am{font-size:9px!important}
+.missionItem span{font-size:11px!important}.missionItem em{font-size:9px!important}.grp .gv{font-size:13px!important}.grp .gi{font-size:17px!important}
+#financePanel{position:fixed;left:88px;bottom:166px;width:286px;z-index:14;display:none;border:1px solid var(--line);border-radius:18px;background:rgba(4,10,19,.88);padding:14px;box-shadow:0 18px 55px rgba(0,0,0,.38);backdrop-filter:blur(16px)}
+#financePanel.on{display:block}.financeHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.financeHead strong{font:800 12px var(--mono);letter-spacing:.1em}.financeHead button{border:0;background:rgba(255,255,255,.06);color:#9fb0c5;border-radius:9px;width:29px;height:29px;cursor:pointer}
+.financeNet{display:flex;justify-content:space-between;align-items:end;padding:10px 11px;border-radius:13px;background:rgba(255,255,255,.035);margin-bottom:8px}.financeNet span{font-size:11px;color:#91a3b9}.financeNet b{font:800 20px var(--mono)}
+.financeSection{margin-top:9px}.financeSection h4{font:800 9px var(--mono);letter-spacing:.14em;color:#71849d;margin-bottom:5px}.financeLine{display:flex;justify-content:space-between;gap:10px;padding:6px 7px;border-bottom:1px solid rgba(255,255,255,.045);font-size:12px;color:#b8c5d6}.financeLine b{font-family:var(--mono);font-size:12px}.financeLine.in b{color:#34d399}.financeLine.out b{color:#fb7185}
+#financeToggle{position:fixed;left:88px;bottom:128px;z-index:15;border:1px solid rgba(52,211,153,.25);background:rgba(5,18,18,.86);color:#7de8bd;border-radius:13px;padding:9px 12px;font:800 10px var(--mono);cursor:pointer;display:none}body.game-on #financeToggle{display:block}
+#chapterBanner{position:fixed;left:50%;top:145px;transform:translateX(-50%);z-index:34;display:none;max-width:min(620px,88vw);padding:13px 18px;border:1px solid rgba(167,139,250,.24);border-radius:16px;background:rgba(10,7,25,.9);box-shadow:0 18px 55px rgba(0,0,0,.4);text-align:center;pointer-events:none}
+#chapterBanner.on{display:block;animation:chapterIn .45s ease}#chapterBanner small{font:800 9px var(--mono);letter-spacing:.18em;color:#a78bfa}#chapterBanner strong{display:block;font-size:18px;margin-top:4px}#chapterBanner span{display:block;font-size:12px;color:#9caec4;margin-top:4px}@keyframes chapterIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+#loreCard{margin-top:15px;padding:13px 14px;border-left:3px solid var(--purple);border-radius:0 13px 13px 0;background:rgba(167,139,250,.08);font-size:13px;line-height:1.6;color:#b8c5d8}
+#over{overflow-y:auto}#oText{max-width:650px!important;font-size:16px!important}#oGrid{flex-wrap:wrap;justify-content:center}.os{font-size:10px!important}.os em{font-size:25px!important}
+@media(max-width:820px){
+ body{font-size:17px}.btxt{font-size:15px!important}.btxt strong{font-size:17px!important}.bitem .btime,.bhandle{font-size:11px!important}.bactions button{font-size:12px!important}
+ #topBar{height:66px!important}.sc .sv{font-size:15px!important}.sc .sl{font-size:7px!important}#mobileSummary{top:82px!important;height:43px!important;font-size:10px!important}#mobileSummary b{font-size:12px!important}
+ #actionBar{max-height:70dvh!important}.eco .el{font-size:8px!important}.eco .ev2{font-size:15px!important}.acard{min-width:0!important;max-width:none!important;padding:12px 5px!important}.acard .ai{font-size:25px!important}.acard .at{font-size:10px!important}.acard .ac,.acard .am{font-size:8px!important}
+ .pbox h3{font-size:23px!important}.pbox .pdesc{font-size:15px!important}.popt{font-size:15px!important}.popt .pl{font-size:11px!important}.popt .pe{font-size:11px!important}
+ #financeToggle{left:10px;bottom:78px;padding:10px 12px}#financePanel{left:8px;right:8px;bottom:74px;width:auto;max-height:66dvh;overflow-y:auto;z-index:65;border-radius:22px}.financeLine{font-size:14px}.financeLine b{font-size:14px}
+ #chapterBanner{top:132px}.introCard p{font-size:15px!important}#loreCard{font-size:14px}
+}
+
 </style>
 
 <div id="app"></div>
@@ -373,6 +400,7 @@ body.perf-low #worldTicker,body.perf-low #comboToast{display:none!important}
     <div class="introEyebrow"><span class="liveDot"></span> SIMULAÇÃO GEOPOLÍTICA EM TEMPO REAL</div>
     <h1>ESTADO<br><em>MAIOR</em></h1>
     <p>Comande uma nação, reaja ao mundo e transforme cada decisão em uma manchete global.</p>
+    <div id="loreCard"><strong>ANO 2027 — A ORDEM MUNDIAL ESTÁ RACHANDO.</strong><br>Seu mandato começa em meio a crises, rivalidades e uma disputa por influência. Em quatro anos, você deixará uma democracia próspera, uma potência temida, um império instável — ou um país em ruínas.</div>
     <div class="countrySearchWrap">
       <span>⌕</span><input id="countrySearch" autocomplete="off" placeholder="Buscar uma nação...">
       <div id="countryResults"></div>
@@ -419,6 +447,15 @@ body.perf-low #worldTicker,body.perf-low #comboToast{display:none!important}
   <button class="mobileNavBtn" data-mobile-view="feed"><span>◫</span>RADAR</button>
   <button class="mobileNavBtn" data-mobile-view="country"><span>⚑</span>PAÍS</button>
 </nav>
+
+<button id="financeToggle" title="Abrir orçamento">💹 ORÇAMENTO</button>
+<section id="financePanel">
+  <div class="financeHead"><strong>FLUXO DO TESOURO</strong><button id="financeClose">✕</button></div>
+  <div class="financeNet"><span>Saldo anual projetado</span><b id="finNet">—</b></div>
+  <div class="financeSection"><h4>ENTRADAS</h4><div id="finIncome"></div></div>
+  <div class="financeSection"><h4>SAÍDAS</h4><div id="finExpense"></div></div>
+</section>
+<div id="chapterBanner"><small id="chapterKicker">CAPÍTULO</small><strong id="chapterTitle">—</strong><span id="chapterText">—</span></div>
 
 <div id="aiLoader">✦ <span>.</span><span>.</span><span>.</span> Central de inteligência</div>
 
@@ -791,8 +828,21 @@ let worldTension=28,actionCombo=0,lastActionDay=-99,comboTimer=null,nextWorldEve
 const objectives=[
   {id:'approval',label:'Atingir 60% de aprovação',reward:'+1 CP',done:false,check:n=>n.aprovacao>=60,grant:n=>{cp=Math.min(CP_MAX,cp+1);}},
   {id:'economy',label:'Crescer o PIB em 5%',reward:'Caixa +1% PIB',done:false,check:n=>n.pib>=n.pib0*1.05,grant:n=>{n.caixa+=n.pib*.01;}},
-  {id:'diplo',label:'Firmar uma aliança ou acordo',reward:'Diplomacia +6',done:false,check:n=>n.aliados.length+n.acordos.length>0,grant:n=>{n.diplo+=6;}}
+  {id:'diplo',label:'Firmar uma aliança ou acordo',reward:'Diplomacia +6',done:false,check:n=>n.aliados.length+n.acordos.length>0,grant:n=>{n.diplo+=6;}},
+  {id:'science',label:'Levar ciência a 70',reward:'PIB +1.5%',done:false,check:n=>n.ciencia>=70,grant:n=>{n.pib*=1.015;}},
+  {id:'health',label:'Levar saúde a 70',reward:'Aprovação +5',done:false,check:n=>n.saude>=70,grant:n=>{n.aprovacao+=5;}},
+  {id:'stability',label:'Manter estabilidade acima de 65',reward:'Legitimidade +6',done:false,check:n=>dia>180&&n.estabilidade>=65,grant:n=>{n.legitimidade+=6;}}
 ];
+const STORY_CHAPTERS=[
+ {day:0,k:'PRÓLOGO',title:'A cadeira mais solitária do mundo',text:'Você herdou um país pressionado por dentro e observado por fora.'},
+ {day:365,k:'ANO II',title:'O preço das primeiras escolhas',text:'A população já não julga promessas. Agora ela cobra resultados.'},
+ {day:730,k:'ANO III',title:'A disputa pelo legado',text:'Aliados, rivais e mercados começam a apostar no destino do seu governo.'},
+ {day:1095,k:'ANO IV',title:'A última batalha política',text:'Cada decisão final poderá definir como a História lembrará seu nome.'}
+];
+let shownChapters=new Set();
+function showChapter(ch){if(shownChapters.has(ch.day))return;shownChapters.add(ch.day);$('chapterKicker').textContent=ch.k;$('chapterTitle').textContent=ch.title;$('chapterText').textContent=ch.text;$('chapterBanner').classList.add('on');setTimeout(()=>$('chapterBanner').classList.remove('on'),6500);addBulletin('📖',ch.title,ch.text,'ai-event');}
+function checkStoryChapter(){const ch=[...STORY_CHAPTERS].reverse().find(c=>dia>=c.day&&!shownChapters.has(c.day));if(ch)showChapter(ch);}
+
 function setTicker(txt){const t=$('tickerText');if(t){t.textContent=txt;t.style.animation='none';void t.offsetWidth;t.style.animation='tickerSlide 14s linear infinite';}}
 function addTension(v,reason=''){worldTension=clamp(worldTension+v,0,100);updateMetaHud();if(reason)setTicker(reason);}
 function registerAction(label){actionCombo=dia-lastActionDay<=24?actionCombo+1:1;lastActionDay=dia;clearTimeout(comboTimer);$('comboValue').textContent='x'+actionCombo;$('comboText').textContent=actionCombo>=4?'Governo em alta rotação':actionCombo>=2?'Momentum em alta':'Nova sequência iniciada';$('comboToast').classList.add('on');comboTimer=setTimeout(()=>$('comboToast').classList.remove('on'),2600);if(actionCombo>=4){cp=Math.min(CP_MAX,cp+1);addBulletin('⚡','Bônus de momentum','Sequência política recuperou 1 CP.','good');actionCombo=0;}}
@@ -821,6 +871,16 @@ const ACOES=[
   {id:'austeridade',ico:'✂️',t:'Austeridade',cp:2,c:-.030,cd:120,grupos:{emp:10,sind:-14},go:n=>{n.aprovacao-=12;n.estabilidade-=7;n.saude-=4;},msg:'Pacote de cortes'},
   {id:'reforco',ico:'🪖',t:'Reforço',cp:1,c:.018,cd:30,grupos:{mil:8},go:n=>{if(n.emGuerra)n.warStrength=clamp(n.warStrength+18,0,100);n.mil+=3;},msg:'Tropas reforçadas'},
   {id:'excecao',ico:'🚨',t:'Exceção',cp:3,c:.014,cd:200,grupos:{mil:16,uni:-18},go:n=>{n.estabilidade+=28;if(!n._excecaoFree)n.legitimidade-=25;n.aprovacao-=8;n.diplo-=10;},msg:'Estado de exceção'},
+  {id:'educacao',ico:'🎓',t:'Educação',cp:1,c:.013,cd:65,grupos:{uni:14,sind:4},go:n=>{n.ciencia+=7;n.legitimidade+=3;n.aprovacao+=2;efeitos.push({dias:240,f:m=>{m.pib*=1.000025;}});},msg:'Plano nacional de educação'},
+  {id:'industria',ico:'🏭',t:'Indústria',cp:2,c:.028,cd:100,grupos:{emp:12,sind:5},go:n=>{n.pib*=1.025;n.caixa+=n.pib*.004;n.estabilidade+=2;},msg:'Programa de reindustrialização'},
+  {id:'energia',ico:'⚡',t:'Energia',cp:2,c:.025,cd:110,grupos:{emp:8,uni:6},go:n=>{n.pib*=1.018;n.ciencia+=4;n.aprovacao+=2;},msg:'Matriz energética modernizada'},
+  {id:'seguranca',ico:'🚓',t:'Segurança',cp:1,c:.011,cd:55,grupos:{mil:7,sind:-2},go:n=>{n.estabilidade+=10;n.aprovacao+=3;n.legitimidade-=1;},msg:'Operação nacional de segurança'},
+  {id:'habitacao',ico:'🏠',t:'Habitação',cp:2,c:.024,cd:95,grupos:{sind:12,emp:3},go:n=>{n.aprovacao+=9;n.estabilidade+=4;n.pib*=1.008;},msg:'Novas moradias entregues'},
+  {id:'comercio',ico:'🚢',t:'Exportações',cp:1,c:.007,cd:50,grupos:{emp:9},go:n=>{n.caixa+=n.pib*.012;n.pib*=1.009;n.diplo+=3;},msg:'Missão comercial bem-sucedida'},
+  {id:'inteligencia',ico:'🛰️',t:'Inteligência',cp:1,c:.009,cd:70,grupos:{mil:8,uni:4},go:n=>{n.mil+=5;n.estabilidade+=3;n.diplo+=2;worldTension=Math.max(0,worldTension-2);},msg:'Rede de inteligência ampliada'},
+  {id:'cultura',ico:'🎭',t:'Cultura',cp:1,c:.006,cd:45,grupos:{uni:7,sind:6},go:n=>{n.aprovacao+=6;n.legitimidade+=4;n.diplo+=2;},msg:'Circuito cultural nacional'},
+  {id:'verde',ico:'🌱',t:'Transição Verde',cp:2,c:.019,cd:90,grupos:{uni:10,emp:-3},go:n=>{n.ciencia+=6;n.diplo+=5;n.pib*=1.011;n.aprovacao+=2;},msg:'Pacto climático lançado'},
+  {id:'reserva',ico:'🏦',t:'Fundo Reserva',cp:1,c:.020,cd:80,grupos:{emp:5},go:n=>{n.caixa+=n.pib*.006;n.estabilidade+=5;efeitos.push({dias:150,f:m=>{m.aprovacao+=.008;}});},msg:'Reserva anticrise criada'},
 ];
 const cpCusto=a=>Math.max(1,a.cp+(PLAYER?PLAYER._dCp||0:0));
 const podeUsar=a=>{if(!PLAYER)return false;const n=PLAYER,custo=a.c*n.pib,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
@@ -862,12 +922,15 @@ const STAT_DEF=[
   {k:'mil',l:'Militar',i:'🛡️',c:v=>v<30?'var(--rose)':'var(--teal)'},
   {k:'diplo',l:'Diplo.',i:'🤝',c:v=>v<30?'var(--rose)':'var(--teal)'},
 ];
-const fluxoAnual=()=>{
-  if(!PLAYER)return 0;const n=PLAYER,tx=TAXAS[taxIdx].v;
-  const coloniaRenda=n.colonias.reduce((s,c)=>s+c.dreno*12,0);
-  const acordoBonus=n.acordos.reduce((s,ac)=>s+n.pib*ac.bonus,0);
-  return (n.pib*tx)-(n.pib*GASTO)-(n.divida*JURO)-(n.emGuerra?n.pib*.04:0)-(n.sancoes*n.pib*.015)+coloniaRenda+acordoBonus;
-};
+function financeBreakdown(){
+  if(!PLAYER)return {income:[],expense:[],net:0};const n=PLAYER,tx=TAXAS[taxIdx].v;
+  const income=[['Impostos',n.pib*tx],['Acordos comerciais',n.acordos.reduce((s,ac)=>s+n.pib*ac.bonus,0)],['Colônias e territórios',n.colonias.reduce((s,c)=>s+c.dreno*12,0)]];
+  const expense=[['Serviços públicos',n.pib*GASTO],['Juros da dívida',n.divida*JURO],['Operação de guerra',n.emGuerra?n.pib*.04:0],['Impacto de sanções',n.sancoes*n.pib*.015]];
+  const net=income.reduce((s,x)=>s+x[1],0)-expense.reduce((s,x)=>s+x[1],0);return {income,expense,net};
+}
+const fluxoAnual=()=>financeBreakdown().net;
+function updateFinancePanel(){if(!PLAYER)return;const f=financeBreakdown();$('finNet').textContent=(f.net>=0?'+':'')+money(f.net);$('finNet').style.color=f.net>=0?'#34d399':'#fb7185';$('finIncome').innerHTML=f.income.map(([k,v])=>`<div class="financeLine in"><span>${k}</span><b>+${money(v)}</b></div>`).join('');$('finExpense').innerHTML=f.expense.map(([k,v])=>`<div class="financeLine out"><span>${k}</span><b>−${money(v)}</b></div>`).join('');}
+
 function refresh(){
   if(!PLAYER)return;const n=PLAYER;
   $('statRow').innerHTML=STAT_DEF.map(({k,l,i,c})=>{const v=Math.round(n[k]),prev=prevStats[k]||v,d=v-prev;
@@ -875,7 +938,7 @@ function refresh(){
     return `<div class="sc"><span class="si">${i}</span><div><span class="sv" style="color:${c(v)}">${v}</span><span class="sl">${l}</span></div>${tr}</div>`;}).join('');
   STAT_DEF.forEach(({k})=>{prevStats[k]=Math.round(n[k]);});
   $('cpBar').innerHTML=Array.from({length:CP_MAX},(_,i)=>`<div class="pip ${i<cp?'on':''}"></div>`).join('');
-  const f=fluxoAnual();
+  const f=fluxoAnual();updateFinancePanel();
   $('eCash').textContent=money(n.caixa);$('eCash').style.color=n.caixa<0?'var(--rose)':'var(--bone)';
   $('eFlow').textContent=(f>=0?'+':'')+money(f);$('eFlow').style.color=f>=0?'var(--teal)':'var(--rose)';
   $('eDebt').textContent=Math.round(n.divida/n.pib*100)+'%';$('eDebt').style.color=n.divida/n.pib>1.2?'var(--rose)':n.divida/n.pib>.7?'var(--amber)':'var(--bone)';
@@ -1088,6 +1151,7 @@ function startGame(n){
   refresh();
   addBulletin(flag(n.nome),'Mandato iniciado',`${ldr.cargo} — ${n.nome}`,'act');
   addBulletin('📊','Situação herdada',`Aprovação: ${Math.round(n.aprovacao)}% · Dívida: ${Math.round(n.divida/n.pib*100)}% PIB`,'warn');
+  checkStoryChapter();
   // Primeiro evento IA após 10 segundos
   setTimeout(()=>gerarEventoIA('evento'),10000);
 }
@@ -1197,6 +1261,16 @@ function clampAll(){if(!PLAYER)return;const n=PLAYER;
   n.congresso=clamp(n.congresso,10,95);n.oposicao=clamp(n.oposicao,0,80);n.sancoes=clamp(n.sancoes,0,5);
   Object.keys(n.grupos).forEach(k=>n.grupos[k]=clamp(n.grupos[k],0,100));}
 
+function governmentPulse(){if(!PLAYER)return;const n=PLAYER,positives=[];
+ if(n.aprovacao>=60)positives.push(['👏','Confiança em alta',`A aprovação do governo chega a ${Math.round(n.aprovacao)}%.`]);
+ if(fluxoAnual()>0)positives.push(['💹','Contas no azul',`O Tesouro projeta superávit anual de ${money(fluxoAnual())}.`]);
+ if(n.saude>=65)positives.push(['🏥','Saúde avança','Indicadores hospitalares registram a melhor melhora do mandato.']);
+ if(n.ciencia>=65)positives.push(['🔬','Inovação nacional','Universidades e empresas anunciam uma nova onda de pesquisa.']);
+ if(n.diplo>=65)positives.push(['🌐','Prestígio internacional',`${n.nome} ganha influência em negociações multilaterais.`]);
+ if(n.estabilidade>=65)positives.push(['🏛️','Instituições estáveis','Mercados e cidadãos reagem bem à previsibilidade política.']);
+ if(n.pib>n.pib0*1.03)positives.push(['📈','Economia acelera',`O PIB acumula crescimento de ${((n.pib/n.pib0-1)*100).toFixed(1)}%.`]);
+ if(positives.length&&Math.random()<.7){const e=pick(positives);addBulletin(e[0],e[1],e[2],'good');n.aprovacao+=.6;n.legitimidade+=.35;}}
+
 /* ===== TICK ===== */
 function tick(dt){
   if(!playing||speed===0||!PLAYER)return;acc+=dt*speed*1.15;
@@ -1270,7 +1344,8 @@ function tick(dt){
     cpAcc+=1/10;if(cpAcc>=1&&cp<CP_MAX){cp++;cpAcc=0;}else if(cpAcc>=1)cpAcc=1;
     if(n.emGuerra)tickGuerra();
     if(dia>=nextWorldEvent){gerarEventoMundo();nextWorldEvent=dia+32+Math.floor(Math.random()*42);}
-    if(dia%30===0)worldTension=clamp(worldTension+(n.emGuerra?2:-.5),0,100);
+    if(dia%30===0){worldTension=clamp(worldTension+(n.emGuerra?2:-.5),0,100);governmentPulse();}
+    checkStoryChapter();
     // Processar fila IA
     if(aiQueue.length&&!$('popup').classList.contains('on'))processarFilaIA();
     // Disparar eventos IA periodicamente
@@ -1295,8 +1370,15 @@ function tick(dt){
   }
 }
 function end(t,c,txt){playing=false;if(!PLAYER)return;const n=PLAYER;
-  $('oTitle').textContent=t;$('oTitle').style.color=c;$('oText').textContent=txt;
-  $('oGrid').innerHTML=`<div class="os">Aprovação<em>${Math.round(n.aprovacao)}%</em></div><div class="os">PIB<em>${(n.pib/n.pib0*100-100>=0?'+':'')}${(n.pib/n.pib0*100-100).toFixed(1)}%</em></div><div class="os">Dívida<em>${Math.round(n.divida/n.pib*100)}%</em></div><div class="os">Legit.<em>${Math.round(n.legitimidade)}</em></div>`;
+  const growth=(n.pib/n.pib0-1)*100,debt=n.divida/n.pib*100,score=Math.round(n.aprovacao*.22+n.estabilidade*.18+n.legitimidade*.16+n.saude*.09+n.ciencia*.09+n.diplo*.08+n.mil*.05+Math.max(-20,Math.min(30,growth))*1.2-Math.max(0,debt-70)*.12+n.aliados.length*2+n.acordos.length);
+  let legacy='Um mandato esquecido';let epilogue='Você saiu do palácio sem destruir o país, mas sem mudar seu destino.';
+  if(score>=88){legacy='Arquiteto de uma nova era';epilogue=`${n.nome} encerra o mandato como potência respeitada, próspera e politicamente estável. Seu nome entra nos livros de História.`;}
+  else if(score>=72){legacy='Estadista de grande legado';epilogue='Reformas, crescimento e influência internacional transformaram o país. Seus sucessores governarão à sombra do seu legado.';}
+  else if(score>=56){legacy='Governo sólido';epilogue='Houve crises e concessões, mas o país termina mais forte e funcional do que começou.';}
+  else if(score>=40){legacy='Sobrevivente político';epilogue='Você completou parte da missão, mas deixou dívidas, divisões e oportunidades perdidas.';}
+  else if(score<25){legacy='O mandato que virou advertência';epilogue='Instituições fragilizadas e uma economia pressionada transformam seu governo em uma lição para as próximas gerações.';}
+  $('oTitle').textContent=t;$('oTitle').style.color=c;$('oText').innerHTML=`${txt}<br><br><strong style="color:#fff">LEGADO: ${legacy}</strong><br>${epilogue}`;
+  $('oGrid').innerHTML=`<div class="os">Pontuação<em>${score}</em></div><div class="os">Aprovação<em>${Math.round(n.aprovacao)}%</em></div><div class="os">PIB<em>${growth>=0?'+':''}${growth.toFixed(1)}%</em></div><div class="os">Dívida<em>${Math.round(debt)}%</em></div><div class="os">Legit.<em>${Math.round(n.legitimidade)}</em></div><div class="os">Alianças<em>${n.aliados.length}</em></div>`;
   $('over').classList.add('on');}
 
 /* ===== RENDER / TEMPO REAL ===== */

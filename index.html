@@ -2233,10 +2233,43 @@ body.game-on #v11Tools{display:flex}
   const baseRefresh=refresh;
   refresh=function(){const r=baseRefresh();if(!PLAYER)return r;addActionTabs();filterActions();renderMacro();renderCampaign();return r;};
   const baseDossier=openDossier;
-  openDossier=function(n){const r=baseDossier(n);if(PLAYER&&n!==PLAYER){const score=relation(PLAYER,n),label=score>55?'PARCEIRO ESTRATÉGICO':score>20?'RELAÇÃO POSITIVA':score>-20?'NEUTRO':score>-55?'TENSÃO DIPLOMÁTICA':'HOSTIL';$('dStats').insertAdjacentHTML('afterend',`<div class="relationScore">${label} · RELAÇÃO ${score>0?'+':''}${score}</div>`);}return r;};
+  openDossier=function(n){document.querySelectorAll('#dossier .relationScore').forEach(e=>e.remove());const r=baseDossier(n);document.querySelectorAll('#dossier .relationScore').forEach(e=>e.remove());if(PLAYER&&n!==PLAYER){const score=relation(PLAYER,n),label=score>55?'PARCEIRO ESTRATÉGICO':score>20?'RELAÇÃO POSITIVA':score>-20?'NEUTRO':score>-55?'TENSÃO DIPLOMÁTICA':'HOSTIL';$('dStats').insertAdjacentHTML('afterend',`<div class="relationScore">${label} · RELAÇÃO ${score>0?'+':''}${score}</div>`);}return r;};
   const baseTick=tick;
   tick=function(dt){const before=dia,r=baseTick(dt);if(PLAYER&&dia!==before){updateMacro();if(dia%45===0)autonomousWorld();if(dia%30===0)saveGame(true);if(dia%90===0){PLAYER.aprovacao-=Math.max(0,macro.inflation-7)*.08;PLAYER.estabilidade-=Math.max(0,macro.unemployment-10)*.06;}}return r;};
   window.addEventListener('beforeunload',()=>{if(PLAYER)saveGame(true);});
 })();
 </script>
+
+<style>
+/* ===== DESKTOP V13 — zonas sem cortes e rolagem discreta ===== */
+@media(min-width:821px){
+  :root{--desktop-action-h:214px}
+  #actionBar{height:var(--desktop-action-h)!important;max-height:none!important;bottom:8px!important;padding:10px 12px 9px!important;overflow:hidden!important}
+  #ecoRow{height:42px!important;margin-bottom:5px!important;flex-wrap:nowrap!important}
+  #actionTabs{height:30px!important;margin-bottom:5px!important;overflow-x:auto!important;overflow-y:hidden!important}
+  .actionTab{height:27px!important;padding:5px 10px!important;white-space:nowrap!important}
+  #actionRow{height:106px!important;min-height:106px!important;align-items:stretch!important;overflow-x:auto!important;overflow-y:hidden!important;padding:0 0 7px!important;gap:7px!important}
+  #actionRow .acard{height:99px!important;min-height:99px!important;min-width:92px!important;max-width:104px!important;padding:8px 7px!important;justify-content:center!important;overflow:hidden!important}
+  #actionRow .acard .ai{font-size:24px!important}#actionRow .acard .at{font-size:10px!important}#actionRow .actionReason{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  #worldTicker{bottom:230px!important}#groupBar{bottom:270px!important}
+  #missionPanel{max-height:340px!important;overflow-y:auto!important;overscroll-behavior:contain}
+  #mapActivity{top:432px!important;bottom:238px!important;max-height:none!important}
+  #mapActivityList{max-height:calc(100vh - 720px)!important;min-height:150px!important;overflow-y:auto!important;overscroll-behavior:contain}
+  #dossier{top:8px!important;bottom:8px!important;height:auto!important;padding-bottom:28px!important;overflow-y:auto!important;overscroll-behavior:contain}
+
+  #missionPanel,#mapActivityList,#dossier,#bulletin,#actionRow,#actionTabs,#financePanel,#politicsPanel{scrollbar-width:thin;scrollbar-color:rgba(125,211,252,.28) transparent}
+  #missionPanel::-webkit-scrollbar,#mapActivityList::-webkit-scrollbar,#dossier::-webkit-scrollbar,#bulletin::-webkit-scrollbar,#actionRow::-webkit-scrollbar,#actionTabs::-webkit-scrollbar,#financePanel::-webkit-scrollbar,#politicsPanel::-webkit-scrollbar{width:4px;height:4px}
+  #missionPanel::-webkit-scrollbar-track,#mapActivityList::-webkit-scrollbar-track,#dossier::-webkit-scrollbar-track,#bulletin::-webkit-scrollbar-track,#actionRow::-webkit-scrollbar-track,#actionTabs::-webkit-scrollbar-track{background:transparent}
+  #missionPanel::-webkit-scrollbar-thumb,#mapActivityList::-webkit-scrollbar-thumb,#dossier::-webkit-scrollbar-thumb,#bulletin::-webkit-scrollbar-thumb,#actionRow::-webkit-scrollbar-thumb,#actionTabs::-webkit-scrollbar-thumb{background:rgba(125,211,252,.3);border-radius:99px}
+}
+@media(min-width:1200px){
+  body.dossier-open #actionBar{right:calc(var(--right-zone) + 326px)!important}
+  body.dossier-open #worldTicker{right:calc(var(--right-zone) + 326px)!important}
+}
+@media(min-width:821px) and (max-height:800px){
+  :root{--desktop-action-h:190px}#actionRow{height:86px!important;min-height:86px!important}#actionRow .acard{height:80px!important;min-height:80px!important}
+  #actionRow .actionReason,.actionVote{display:none!important}#worldTicker{bottom:206px!important}#groupBar{bottom:244px!important}#missionPanel{max-height:280px!important}#mapActivity{top:370px!important;bottom:214px!important}
+}
+</style>
 

@@ -56,16 +56,27 @@
       }
       return counts.other++<8;
     });
-    impactRings=impactRings.filter(r=>{
-      const red=String(r.rgb||'251,75,100').startsWith('251,')||String(r.rgb||'').startsWith('255,');
-      if(red)return false;if(r._until&&r._until<Date.now())return false;return true;
-    }).slice(-(isMobile?3:5));
-    ambientArcs=ambientArcs.filter(a=>!a._until||a._until>Date.now()).slice(-(isMobile?8:14));
+    /* O mapa de calor e a borda do país já comunicam a guerra. Ondas e
+       trajetórias hostis duplicavam o aviso, poluíam o mapa e custavam FPS. */
+    impactRings=[];
+    ambientArcs=ambientArcs.filter(a=>{
+      if(a._until&&a._until<Date.now())return false;
+      const type=String(a.type||'').toLowerCase();
+      const colors=Array.isArray(a.colors)?a.colors.join('|'):String(a.color||'');
+      const hostile=type==='battle'||type==='war'||type.includes('military')||/fb4b64|ff7a30|251\s*,\s*75\s*,\s*100/i.test(colors);
+      return !hostile;
+    }).slice(-(isMobile?6:10));
     warArcs=[];
   }
 
   const layerBase=refreshGlobeLayers;
-  refreshGlobeLayers=function(){pruneVisuals();return layerBase();};
+  refreshGlobeLayers=function(){
+    pruneVisuals();
+    const result=layerBase();
+    /* Garante que efeitos antigos salvos em memória também desapareçam. */
+    World.ringsData([]);
+    return result;
+  };
   updateWarUnits=function(now=performance.now()){
     const interval=isMobile?260:170;if(document.hidden||now-lastUnitFrame<interval)return;lastUnitFrame=now;
     mobileUnits.forEach(u=>{if(!u.stationary)moveUnit(u);});lastHtmlSignature='';refreshGlobeLayers();

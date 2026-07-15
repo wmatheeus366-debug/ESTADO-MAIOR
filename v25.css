@@ -1,9 +1,10 @@
 /* Estado Maior V25 — estratégia em primeiro plano e governo por briefings */
 body.v25-government-events #governmentRoom{display:none!important}
 #strategyOpen{position:relative!important;min-height:54px!important;border-color:rgba(103,232,249,.38)!important;background:linear-gradient(135deg,rgba(8,145,178,.2),rgba(14,116,144,.08))!important;color:#a5f3fc!important;box-shadow:inset 0 0 0 1px rgba(103,232,249,.08),0 0 22px rgba(34,211,238,.08)!important}
-#strategyOpen>span{font-size:21px!important;text-shadow:0 0 14px rgba(103,232,249,.75)}
+#strategyOpen>span:not(.strategyRailBadge){font-size:21px!important;text-shadow:0 0 14px rgba(103,232,249,.75)}
 #strategyOpen b{font-size:9px!important;color:#a5f3fc!important}
 .strategyRailBadge,.governmentRailBadge{position:absolute;right:7px;top:6px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:99px;background:#fb4b64;color:white;font:900 7px var(--mono);box-shadow:0 0 14px rgba(251,75,100,.5)}
+.strategyRailBadge{right:6px!important;top:5px!important;min-width:19px!important;width:auto!important;height:19px!important;padding:0 5px!important;font:900 8px/1 var(--mono)!important;text-shadow:none!important;box-sizing:border-box!important}
 .governmentRailBadge.zero{display:none}
 #govOpen{position:relative!important;border-color:rgba(251,191,36,.26)!important;background:rgba(251,191,36,.065)!important;color:#f5d978!important}
 #govOpen.briefingPending{box-shadow:inset 0 0 0 1px rgba(251,191,36,.12),0 0 20px rgba(251,191,36,.09)!important}
@@ -22,6 +23,20 @@ body.game-on #strategyPanel{width:470px!important;border-color:rgba(103,232,249,
 body.game-on #strategyPanel .strategyHead{background:linear-gradient(90deg,rgba(8,145,178,.13),transparent)}
 body.game-on #strategyPanel .strategyHead strong{color:#c5f7fb!important;font-size:16px!important}
 body.game-on #strategyPanel #strategyBody{flex:1;min-height:0}
+
+/* A V23 compactava a barra em 176px e cortava a metade inferior dos cartões. */
+@media(min-width:821px){
+  body.v23-ready #actionBar{height:232px!important;max-height:232px!important;padding:9px 11px 11px!important;overflow:hidden!important}
+  body.v23-ready #ecoRow{height:38px!important;min-height:38px!important;margin-bottom:5px!important}
+  body.v23-ready #actionTabs{height:34px!important;margin:0 0 6px!important}
+  body.v23-ready #actionRow{height:128px!important;min-height:128px!important;align-items:stretch!important;gap:8px!important;padding:0 0 7px!important;overflow-x:auto!important;overflow-y:hidden!important}
+  body.v23-ready #actionRow .acard{box-sizing:border-box!important;flex:0 0 118px!important;width:118px!important;min-width:118px!important;max-width:118px!important;height:120px!important;min-height:120px!important;padding:8px!important;gap:4px!important;justify-content:flex-start!important;overflow:hidden!important}
+  body.v23-ready #actionRow .acard .ai{font-size:22px!important;line-height:1!important}
+  body.v23-ready #actionRow .acard .at{min-height:28px!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:11px!important;line-height:1.25!important}
+  body.v23-ready #actionRow .acard .ac,body.v23-ready #actionRow .acard .am,body.v23-ready #actionRow .actionVote{font-size:8px!important;line-height:1.2!important}
+  body.v23-ready #actionRow .actionReason{display:block!important;max-width:100%!important;min-height:10px!important;font-size:7px!important;line-height:1.15!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.v23-ready #worldTicker{bottom:248px!important}
+}
 
 .governmentBriefToast{position:fixed;left:50%;top:82px;z-index:110;width:min(430px,calc(100vw - 22px));transform:translate(-50%,-14px);padding:11px 13px;border:1px solid rgba(251,191,36,.24);border-radius:13px;background:rgba(10,13,18,.96);box-shadow:0 18px 55px rgba(0,0,0,.52);opacity:0;pointer-events:none;transition:.22s}.governmentBriefToast.on{opacity:1;transform:translate(-50%,0)}.governmentBriefToast small{display:block;color:#f5c85c;font:900 7px var(--mono);letter-spacing:.12em}.governmentBriefToast strong{display:block;margin-top:4px;color:#f3f5f7;font-size:12px}.governmentBriefToast span{display:block;margin-top:3px;color:#899caf;font-size:9px}
 

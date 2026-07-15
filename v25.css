@@ -40,6 +40,15 @@ body.game-on #strategyPanel #strategyBody{flex:1;min-height:0}
 
 .governmentBriefToast{position:fixed;left:50%;top:82px;z-index:110;width:min(430px,calc(100vw - 22px));transform:translate(-50%,-14px);padding:11px 13px;border:1px solid rgba(251,191,36,.24);border-radius:13px;background:rgba(10,13,18,.96);box-shadow:0 18px 55px rgba(0,0,0,.52);opacity:0;pointer-events:none;transition:.22s}.governmentBriefToast.on{opacity:1;transform:translate(-50%,0)}.governmentBriefToast small{display:block;color:#f5c85c;font:900 7px var(--mono);letter-spacing:.12em}.governmentBriefToast strong{display:block;margin-top:4px;color:#f3f5f7;font-size:12px}.governmentBriefToast span{display:block;margin-top:3px;color:#899caf;font-size:9px}
 
+/* V26 — mapa limpo, acontecimentos acionáveis e Radar com menos ruído. */
+body.game-on #intro{display:none!important}
+#bulletin .bactions{display:none!important}
+#bulletin .bitem{padding-top:13px!important;padding-bottom:13px!important}
+#bulletin .bcopy{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3;overflow:hidden!important}
+#bulletin .publicPulse{margin-top:7px!important;padding:7px 8px!important;font-size:9px!important;line-height:1.35!important}
+.newsImpactV26{display:block;margin-top:7px;padding:6px 7px;border-radius:7px;background:rgba(34,211,238,.055);border-left:2px solid #38bdf8;color:#8fa9c1;font:800 7px/1.35 var(--mono);letter-spacing:.04em}.newsImpactV26.bad{border-color:#fb5f75;color:#e59aaa}.newsImpactV26.good{border-color:#4adeb5;color:#8ddbc9}
+.eventPointV26{position:relative;width:22px;height:22px;border:1px solid rgba(255,255,255,.8);border-radius:50%;background:rgba(3,9,17,.94);box-shadow:0 0 0 3px rgba(3,9,17,.66),0 0 13px var(--event-color,#38bdf8);cursor:pointer;pointer-events:auto;transition:transform .16s,box-shadow .16s}.eventPointV26:before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--event-color,#38bdf8)}.eventPointV26:hover,.eventPointV26:focus-visible{transform:scale(1.22);box-shadow:0 0 0 3px rgba(3,9,17,.8),0 0 22px var(--event-color,#38bdf8);outline:none}.eventPointV26.critical{border-color:#ff9aaa}.eventPointV26.collapsed{--event-color:#7b838d;border-color:#aeb5bd}
+
 @media(max-width:1380px) and (min-width:821px){#strategyCommandV25{left:244px;width:292px}body.game-on #strategyPanel{left:78px!important;width:440px!important}}
 @media(max-width:1050px) and (min-width:821px){#strategyCommandV25{display:none!important}body.game-on #strategyPanel{width:400px!important}}
 @media(max-width:820px){

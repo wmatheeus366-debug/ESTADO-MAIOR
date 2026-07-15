@@ -94,3 +94,84 @@
   updateBriefingBadge();updateStrategy();setInterval(()=>{updateStrategy();updateBriefingBadge();save();},6000);window.addEventListener('beforeunload',save);
   window.EMBriefings={open:openBriefing,queue:queueBriefing,state};
 })();
+
+/* V26 — menos ruído, notícias com consequência e pontos de decisão no mapa. */
+(function(){
+  const EVENT_GAP_MS=210000,EVENT_GAP_DAYS=45,MAX_EVENTS=6,MAX_FEED_PER_CHANNEL=7,COLLAPSE_STORE='estadoMaior.v26.collapsed';
+  const noisyNews=/movimento internacional|age no cen[aá]rio mundial|novo eixo diplom[aá]tico|economia acelera|inova[cç][aã]o nacional|celebra[cç][aã]o nacional/i;
+  const noisyDays=new Map();let lastEventAt=0,lastEventDay=-999,lastCollapseDay=-1,lastPointSignature='';
+  NATIONS.forEach(n=>n._v26PibStart=n._v26PibStart||n.pib);
+
+  function closePreGameLayers(){
+    if(!PLAYER)return;const intro=document.getElementById('intro'),dossier=document.getElementById('dossier');
+    intro?.classList.add('off');intro?.setAttribute('aria-hidden','true');
+    if(dossier?.querySelector('#btnTake')||dossier?.classList.contains('on'))dossier.classList.remove('on');
+    document.body.classList.remove('dossier-open');
+  }
+  const feed=document.getElementById('feedShell');if(feed)new MutationObserver(()=>{if(PLAYER&&!feed.classList.contains('on'))closePreGameLayers();}).observe(feed,{attributes:true,attributeFilter:['class']});
+
+  function trimFeed(){
+    const box=document.getElementById('bulletin');if(!box)return;
+    ['general','results'].forEach(channel=>[...box.children].filter(x=>x.dataset.channel===channel).slice(MAX_FEED_PER_CHANNEL).forEach(x=>x.remove()));
+  }
+  const bulletinBaseV26=addBulletin;
+  addBulletin=function(ico,title,text,type='act',channel){
+    const actual=channel||(type==='act'?'results':'general'),key=String(title||'').toLowerCase();
+    if(PLAYER&&actual==='general'&&noisyNews.test(key)){
+      const last=noisyDays.get(key)??-999;if(dia-last<35)return;noisyDays.set(key,dia);
+    }
+    const result=bulletinBaseV26(ico,title,text,type,channel),card=document.getElementById('bulletin')?.firstElementChild;
+    if(PLAYER&&card&&actual==='general'&&!card.querySelector('.newsImpactV26')&&['war','bad','warn','good'].includes(type)){
+      const related=`${title} ${text}`.toLocaleLowerCase('pt-BR').includes(PLAYER.nome.toLocaleLowerCase('pt-BR'));
+      let label='',tone=type==='good'?'good':type==='war'||type==='bad'?'bad':'';
+      if(related){const delta=type==='good'?.4:type==='war'?-.6:type==='bad'?-.45:-.2;PLAYER.aprovacao=clamp(PLAYER.aprovacao+delta,0,100);PLAYER.legitimidade=clamp(PLAYER.legitimidade+delta*.45,0,100);label=`IMPACTO NO PAÍS · aprovação ${delta>0?'+':''}${delta.toFixed(1)}`;}
+      else{const delta=type==='good'?-.35:type==='war'?.8:type==='bad'?.5:.2;worldTension=clamp(worldTension+delta,0,100);label=`IMPACTO MUNDIAL · tensão ${delta>0?'+':''}${delta.toFixed(1)}`;}
+      card.querySelector('.btxt')?.insertAdjacentHTML('beforeend',`<span class="newsImpactV26 ${tone}">${label}</span>`);
+    }
+    trimFeed();return result;
+  };
+
+  const eventColors={military:'#fb5f75',disease:'#84cc16',famine:'#f59e0b',protest:'#fbbf24',diplomacy:'#38bdf8',trade:'#34d399',science:'#22d3ee',celebration:'#f472b6',aid:'#a78bfa'};
+  function activeEventPointData(){
+    const out=[],events=(mapLiveEvents||[]).filter(e=>e.lifeState!=='resolved'&&!e.catastropheActive).slice(0,MAX_EVENTS);
+    events.forEach(ev=>{const n=ev.kind==='military'&&ev.b?ev.b:ev.a;if(n)out.push({scope:'event-point',eventId:ev.id,kind:'event-point',stationary:true,color:ev.color||eventColors[ev.kind]||'#38bdf8',severity:ev.severity||40,label:`${ev.title} — clique para intervir`,lat:n.lat,lng:n.lng,alt:.04});});
+    (window.EMCrisis?.crises||[]).filter(c=>!c.contained).slice(0,4).forEach(c=>c.nations.slice(-5).forEach((name,i)=>{const n=NATIONS.find(x=>x.nome===name);if(n)out.push({scope:'crisis-point',crisisId:c.id,markerId:`${c.id}:${name}`,kind:'crisis-point',stationary:true,color:eventColors[c.kind]||'#fb5f75',severity:c.intensity||80,label:`${c.title} em ${name} — clique para ajudar`,lat:n.lat+Math.sin(i*2.3)*.16,lng:n.lng+Math.cos(i*2.3)*.16,alt:.042});}));
+    return out;
+  }
+  function syncEventPoints(force=false){
+    if(!PLAYER)return;const points=activeEventPointData(),sig=points.map(p=>`${p.scope}:${p.eventId||p.markerId}:${Math.round(p.severity)}`).join('|');if(!force&&sig===lastPointSignature)return;lastPointSignature=sig;
+    mobileUnits=mobileUnits.filter(u=>!['event-point','crisis-point','event','catastrophe','traffic','ambient','war','flash'].includes(u.scope));mobileUnits.push(...points);lastHtmlSignature='';queueGlobeRefresh();
+  }
+  const eventVisualBaseV26=spawnMapEventVisual;
+  spawnMapEventVisual=function(ev){
+    if(!ev)return;const target=ev.kind==='military'&&ev.b?ev.b:ev.a;if(target){target._crisisUntil=Date.now()+90000;target._crisisColor=ev.color||eventColors[ev.kind];}
+    mobileUnits=mobileUnits.filter(u=>u.eventId!==ev.id);impactRings=[];ambientArcs=ambientArcs.filter(a=>!String(a.type||'').includes('live-')&&a.type!=='battle');syncEventPoints(true);
+  };
+  const pushEventBaseV26=pushMapLiveEvent;
+  pushMapLiveEvent=function(silent=false){
+    const now=Date.now();if(PLAYER&&!silent&&(now-lastEventAt<EVENT_GAP_MS||dia-lastEventDay<EVENT_GAP_DAYS))return null;
+    const result=pushEventBaseV26(silent);if(PLAYER&&!silent){lastEventAt=now;lastEventDay=dia;}mapLiveEvents=mapLiveEvents.slice(0,MAX_EVENTS);syncEventPoints(true);return result;
+  };
+
+  const markerBaseV26=createGlobeMarker;
+  function markerV26(d){
+    if(d?.scope!=='event-point'&&d?.scope!=='crisis-point')return markerBaseV26(d);
+    const el=document.createElement('button');el.type='button';el.className='eventPointV26'+(d.severity>=75?' critical':'');el.style.setProperty('--event-color',d.color||'#38bdf8');el.title=d.label||'Acontecimento';el.setAttribute('aria-label',el.title);
+    el.onclick=e=>{e.stopPropagation();if(d.scope==='event-point'){const ev=mapLiveEvents.find(x=>x.id===d.eventId),n=ev&&(ev.kind==='military'&&ev.b?ev.b:ev.a);if(n)focusNation(n,1.45);if(ev)participateMapEvent(ev);}else{const c=window.EMCrisis?.crises?.find(x=>x.id===d.crisisId),name=String(d.markerId||'').split(':').slice(1).join(':'),n=NATIONS.find(x=>x.nome===name);if(n)focusNation(n,1.45);if(c)window.EMCrisis.crisisIntervention(c);}};
+    d._el=el;return el;
+  }
+  World.htmlElement(markerV26);
+
+  function loadCollapsed(){try{const names=JSON.parse(localStorage.getItem(COLLAPSE_STORE)||'[]');NATIONS.forEach(n=>n._collapsed=names.includes(n.nome)||!!n._collapsed);}catch(e){}}
+  function saveCollapsed(){localStorage.setItem(COLLAPSE_STORE,JSON.stringify(NATIONS.filter(n=>n._collapsed).map(n=>n.nome)));}
+  function updateCollapsedCountries(){
+    if(!PLAYER||dia===lastCollapseDay)return;lastCollapseDay=dia;let changed=false;const active=window.EMCrisis?.crises?.filter(c=>!c.contained)||[];
+    NATIONS.forEach(n=>{if(n._collapsed)return;const crisis=active.find(c=>c.nations.includes(n.nome)),economic=n.pib<=n._v26PibStart*.3,institutional=n.estabilidade<=7&&n.legitimidade<=9,disaster=!!crisis&&crisis.intensity>=96&&n.estabilidade<=14;if(economic||institutional||disaster){n._collapsed=true;n._crisisUntil=0;n._visualColor='#69717b';changed=true;addBulletin('◼',`${n.nome} entra em colapso`,`O Estado perdeu capacidade de governar. O território ficará cinza até uma futura reconstrução.`,'war','general');}});
+    if(changed){saveCollapsed();window.EMPerformance?.updateWarAura?.(true);syncEventPoints(true);}
+  }
+
+  const startBaseV26=startGame;startGame=function(n){const result=startBaseV26(n);loadCollapsed();closePreGameLayers();mapLiveEvents=mapLiveEvents.slice(0,MAX_EVENTS);updateCollapsedCountries();setTimeout(()=>syncEventPoints(true),400);return result;};
+  const tickBaseV26=tick;tick=function(dt){const before=dia,result=tickBaseV26(dt);if(PLAYER&&dia!==before){updateCollapsedCountries();if(dia%5===0)syncEventPoints();}return result;};
+  loadCollapsed();trimFeed();setInterval(()=>{trimFeed();syncEventPoints();},4000);window.addEventListener('beforeunload',saveCollapsed);
+  window.EMClarity={syncEventPoints,updateCollapsedCountries};
+})();

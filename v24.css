@@ -1,0 +1,21 @@
+/* Estado Maior V24 — composição mais barata em cenários carregados */
+body.performance-tuned #topBar,
+body.performance-tuned #actionBar,
+body.performance-tuned #feedShell,
+body.performance-tuned #situationDrawer,
+body.performance-tuned #strategyPanel,
+body.performance-tuned #governmentRoom,
+body.performance-tuned #financePanel,
+body.performance-tuned #politicsPanel{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.performance-tuned .catastrophePulse,
+body.performance-tuned .liveDot{animation:none!important}
+body.performance-tuned .bitem,
+body.performance-tuned .mapEventCard,
+body.performance-tuned .moving-unit{will-change:auto!important}
+#borderStatusV24{position:fixed;left:176px;top:132px;z-index:15;padding:5px 8px;border:1px solid rgba(125,211,252,.12);border-radius:8px;background:rgba(3,9,17,.72);color:#738aa3;font:700 7px var(--mono);letter-spacing:.07em;pointer-events:none;opacity:0;transition:opacity .2s}
+body.game-on #borderStatusV24.on{opacity:1}
+@media(max-width:1380px) and (min-width:821px){#borderStatusV24{left:78px}}
+@media(max-width:820px){
+  body.performance-tuned #topBar,body.performance-tuned #mobileSummary,body.performance-tuned #mobileNav{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  #borderStatusV24{left:auto;right:8px;top:112px}
+}

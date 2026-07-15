@@ -1,0 +1,219 @@
+/* Estado Maior V32 — arcos de guerra entre países, marcador de doença melhorado, países atacam você */
+
+/* ===== TICKER DE GUERRAS ATIVAS ===== */
+#warTickerV32 {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 22;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+body.game-on #warTickerV32 { display: flex; }
+
+.warPairV32 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 13px;
+  border: 1px solid rgba(251,75,100,.35);
+  border-radius: 10px;
+  background: rgba(18,4,8,.92);
+  backdrop-filter: blur(12px);
+  font: 800 10px var(--mono);
+  letter-spacing: .06em;
+  color: #ff9aac;
+  box-shadow: 0 8px 28px rgba(0,0,0,.4);
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: border-color .2s;
+  animation: warPairIn .35s cubic-bezier(.2,.8,.2,1);
+}
+.warPairV32:hover { border-color: rgba(251,75,100,.7); }
+@keyframes warPairIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+.warPairV32 .wpDot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #fb4b64;
+  box-shadow: 0 0 8px #fb4b64;
+  animation: warDotPulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes warDotPulse { 50% { opacity: .3; transform: scale(.7); } }
+.warPairV32 .wpFlags { font-size: 14px; line-height: 1; }
+.warPairV32 .wpLabel { color: #ffd0d8; }
+.warPairV32 .wpIntensity {
+  font-size: 8px;
+  color: #9e6070;
+  margin-left: 2px;
+}
+.warPairV32 .wpMissile {
+  font-size: 11px;
+  animation: missilePulse .8s ease-in-out infinite alternate;
+}
+@keyframes missilePulse { to { opacity: .4; transform: scale(.85); } }
+
+/* Disease label melhorado no globo */
+.diseaseMarkerV32 {
+  position: relative;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.diseaseMarkerV32 .dmBubble {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid rgba(132,204,22,.4);
+  border-radius: 20px;
+  background: rgba(3,12,3,.92);
+  backdrop-filter: blur(8px);
+  color: #bef264;
+  font: 800 9px var(--mono);
+  letter-spacing: .06em;
+  white-space: nowrap;
+  box-shadow: 0 0 18px rgba(132,204,22,.3);
+  animation: diseasePulse 2s ease-in-out infinite;
+}
+@keyframes diseasePulse {
+  0%,100% { box-shadow: 0 0 12px rgba(132,204,22,.25); }
+  50% { box-shadow: 0 0 28px rgba(132,204,22,.55); }
+}
+.diseaseMarkerV32 .dmIcon { font-size: 14px; line-height: 1; }
+.diseaseMarkerV32 .dmName { color: #d9f99d; }
+.diseaseMarkerV32 .dmIntensity {
+  font-size: 7px;
+  color: #6a8a3a;
+  display: block;
+  margin-top: 1px;
+}
+
+/* ===== ATAQUE DE PAÍSES ===== */
+#attackAlertV32 {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18,2,4,.88);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+}
+#attackAlertV32.on { display: flex; }
+
+.attackBoxV32 {
+  width: min(520px, calc(100vw - 32px));
+  border: 1px solid rgba(251,75,100,.4);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(20,4,8,.98), rgba(8,2,4,.98));
+  box-shadow: 0 0 60px rgba(251,75,100,.2), 0 40px 100px rgba(0,0,0,.7);
+  overflow: hidden;
+  animation: attackIn .4s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes attackIn {
+  from { opacity: 0; transform: scale(.93) translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+.attackHeaderV32 {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid rgba(251,75,100,.2);
+  text-align: center;
+}
+.attackSirenV32 {
+  font-size: 38px;
+  animation: sirenSpin 1s linear infinite;
+  display: block;
+  margin-bottom: 8px;
+}
+@keyframes sirenSpin {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(1.8) drop-shadow(0 0 12px #fb4b64); }
+}
+.attackTitleV32 {
+  font: 900 20px var(--mono);
+  letter-spacing: -.02em;
+  color: #ff8193;
+  display: block;
+}
+.attackSubV32 {
+  font-size: 12px;
+  color: #9e7070;
+  margin-top: 5px;
+  display: block;
+}
+.attackBodyV32 {
+  padding: 18px 24px;
+}
+.attackStatsV32 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.attackStatV32 {
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(251,75,100,.07);
+  border: 1px solid rgba(251,75,100,.15);
+  text-align: center;
+}
+.attackStatV32 b {
+  display: block;
+  font: 900 16px var(--mono);
+  color: #ffd0d8;
+  margin-bottom: 3px;
+}
+.attackStatV32 small {
+  font: 700 8px var(--mono);
+  letter-spacing: .1em;
+  color: #7a5060;
+  text-transform: uppercase;
+}
+.attackChoicesV32 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.attackChoiceV32 {
+  padding: 12px 15px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  background: rgba(20,8,12,.72);
+  color: #d8c8cc;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: .18s;
+}
+.attackChoiceV32:hover { border-color: rgba(251,75,100,.5); background: rgba(40,8,12,.9); }
+.attackChoiceV32.war { border-color: rgba(251,75,100,.3); color: #ff9aac; }
+.attackChoiceV32.peace { border-color: rgba(52,211,153,.25); color: #6ee7b7; }
+.attackChoiceV32 .acLabel {
+  font: 800 9px var(--mono);
+  letter-spacing: .1em;
+  display: block;
+  margin-bottom: 4px;
+}
+.attackChoiceV32.war .acLabel { color: #fb7185; }
+.attackChoiceV32.peace .acLabel { color: #34d399; }
+.attackChoiceV32 .acEffect {
+  font: 700 9px var(--mono);
+  color: #6a5055;
+  display: block;
+  margin-top: 4px;
+}
+
+@media(max-width:820px) {
+  #warTickerV32 { top: 128px; }
+  .attackBoxV32 { width: 100%; }
+  .attackStatsV32 { grid-template-columns: 1fr 1fr; }
+}

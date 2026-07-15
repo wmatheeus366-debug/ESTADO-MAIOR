@@ -482,6 +482,13 @@ body.panel-open #mapActivity,body.panel-open #missionPanel{opacity:.18;pointer-e
   #dossier{width:100%!important}body.dossier-open #feedShell{opacity:0}
 }
 
+
+/* ===== PATCH V8: clareza, decisões mundiais e perfil presidencial ===== */
+#leaderProfile{position:fixed;left:158px;top:374px;width:266px;z-index:12;background:rgba(5,12,23,.94);border:1px solid rgba(148,163,184,.16);border-radius:14px;padding:12px 14px;display:none;box-shadow:0 16px 42px rgba(0,0,0,.28)}
+#leaderProfile.on{display:block}.lpTop{display:flex;justify-content:space-between;gap:12px;align-items:center}.lpK{font:700 8px var(--mono);letter-spacing:.16em;color:#64748b}.lpTitle{font-size:16px;font-weight:900;margin-top:3px}.lpScore{font:800 12px var(--mono);color:#a78bfa}.lpDesc{font-size:10px;line-height:1.5;color:#94a3b8;margin-top:6px}.lpTrack{height:4px;background:rgba(255,255,255,.06);border-radius:9px;margin-top:8px;overflow:hidden}.lpTrack i{display:block;height:100%;background:linear-gradient(90deg,#22d3ee,#a78bfa);transition:width .4s}
+.actionReason{font:700 7px var(--mono);color:#fbbf24;line-height:1.2;min-height:17px;margin-top:2px}.acard.off{opacity:.58!important;filter:saturate(.55)}.acard.off:hover{transform:none!important;border-color:rgba(251,191,36,.25)!important}.worldDecisionBadge{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:999px;background:rgba(251,75,100,.12);border:1px solid rgba(251,75,100,.28);font:800 8px var(--mono);color:#fb7185;letter-spacing:.08em;margin-bottom:8px}
+@media(max-width:900px){#leaderProfile{left:10px;right:10px;top:auto;bottom:76px;width:auto;max-width:390px}}
+
 </style>
 
 <div id="app"></div>
@@ -648,6 +655,8 @@ body.panel-open #mapActivity,body.panel-open #missionPanel{opacity:.18;pointer-e
 
 <div id="hl"></div>
 
+
+<div id="leaderProfile"><div class="lpTop"><div><div class="lpK">PERFIL PRESIDENCIAL</div><div class="lpTitle" id="lpTitle">Pragmático</div></div><div class="lpScore" id="lpScore">0</div></div><div class="lpDesc" id="lpDesc">Seu estilo será definido pelas decisões do mandato.</div><div class="lpTrack"><i id="lpFill" style="width:8%"></i></div></div>
 <div id="popup"><div class="pbox">
   <div class="pi" id="pIco">⚡</div>
   <h3 id="pTitle">—</h3>
@@ -943,6 +952,9 @@ function processarFilaIA(){
 
 /* ===== RITMO, OBJETIVOS E EVENTOS MUNDIAIS ===== */
 let worldTension=28,actionCombo=0,lastActionDay=-99,comboTimer=null,nextWorldEvent=18;
+let nextInterventionEvent=42,nextCongressTheme=55;
+const leadership={autoridade:0,democracia:0,social:0,mercado:0,militar:0,diplomacia:0,tecnologia:0,populismo:0};
+const actionHistory={};let comboUnique=new Set();
 const objectives=[
   {id:'approval',label:'Atingir 60% de aprovação',reward:'+1 CP',done:false,check:n=>n.aprovacao>=60,grant:n=>{cp=Math.min(CP_MAX,cp+1);influence=Math.min(INFLUENCE_MAX,influence+1);}},
   {id:'economy',label:'Crescer o PIB em 5%',reward:'Caixa +1% PIB',done:false,check:n=>n.pib>=n.pib0*1.05,grant:n=>{n.caixa+=n.pib*.01;}},
@@ -963,9 +975,14 @@ function checkStoryChapter(){const ch=[...STORY_CHAPTERS].reverse().find(c=>dia>
 
 function setTicker(txt){const t=$('tickerText');if(t){t.textContent=txt;t.style.animation='none';void t.offsetWidth;t.style.animation='tickerSlide 14s linear infinite';}}
 function addTension(v,reason=''){worldTension=clamp(worldTension+v,0,100);updateMetaHud();if(reason)setTicker(reason);}
-function registerAction(label){actionCombo=dia-lastActionDay<=24?actionCombo+1:1;lastActionDay=dia;clearTimeout(comboTimer);$('comboValue').textContent='x'+actionCombo;$('comboText').textContent=actionCombo>=4?'Governo em alta rotação':actionCombo>=2?'Momentum em alta':'Nova sequência iniciada';$('comboToast').classList.add('on');comboTimer=setTimeout(()=>$('comboToast').classList.remove('on'),2600);if(actionCombo>=4){cp=Math.min(CP_MAX,cp+1);addBulletin('⚡','Bônus de momentum','Sequência política recuperou 1 CP.','good');actionCombo=0;}}
+function registerAction(id){
+  if(dia-lastActionDay>90){actionCombo=0;comboUnique.clear();}
+  lastActionDay=dia;comboUnique.add(id);actionCombo=comboUnique.size;
+  clearTimeout(comboTimer);$('comboValue').textContent='x'+actionCombo;$('comboText').textContent=actionCombo>=4?'Agenda diversificada':actionCombo>=2?'Governo em movimento':'Nova frente iniciada';$('comboToast').classList.add('on');comboTimer=setTimeout(()=>$('comboToast').classList.remove('on'),2600);
+  if(actionCombo>=4){cp=Math.min(CP_MAX,cp+1);influence=Math.min(INFLUENCE_MAX,influence+1);addBulletin('⚡','Bônus de governabilidade','Quatro áreas diferentes renderam +1 CP e +1 influência.','good','results');actionCombo=0;comboUnique.clear();}
+}
 function updateObjectives(){if(!PLAYER)return;let done=0;objectives.forEach(o=>{if(!o.done&&o.check(PLAYER)){o.done=true;o.grant(PLAYER);addBulletin('🎯','Objetivo concluído',`${o.label} — recompensa: ${o.reward}.`,'good');}if(o.done)done++;});$('missionCount').textContent=`${done}/${objectives.length}`;$('missionList').innerHTML=objectives.map(o=>`<div class="missionItem ${o.done?'done':''}"><i>${o.done?'✓':'·'}</i><span>${o.label}</span><em>${o.reward}</em></div>`).join('');}
-function updateMetaHud(){const v=Math.round(worldTension);$('tensionValue').textContent=v+'%';$('tensionFill').style.width=v+'%';$('tensionValue').style.color=v>70?'#fb4b64':v>45?'#fbbf24':'#34d399';if(PLAYER)$('composeFlag').textContent=flag(PLAYER.nome);updateObjectives();queueGlobeRefresh();}
+function updateMetaHud(){updateLeaderProfile();const v=Math.round(worldTension);$('tensionValue').textContent=v+'%';$('tensionFill').style.width=v+'%';$('tensionValue').style.color=v>70?'#fb4b64':v>45?'#fbbf24':'#34d399';if(PLAYER)$('composeFlag').textContent=flag(PLAYER.nome);updateObjectives();queueGlobeRefresh();}
 function gerarEventoMundo(){
   const a=pick(NATIONS),b=pick(NATIONS.filter(n=>n!==a));const roll=Math.random();
   if(roll<.28){addTension(6,`${flag(a.nome)} ${a.nome} mobiliza forças perto de ${flag(b.nome)} ${b.nome}.`);addBulletin('🛰️','Movimentação militar',`${flag(a.nome)} ${a.nome} desloca tropas e eleva o alerta regional.`,'war');ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors:['rgba(251,75,100,.05)','#fb4b64'],altitude:.16,stroke:.12,dashLength:.12,dashGap:.16,animate:1800,_until:Date.now()+18000});pulseImpact(a);}
@@ -1008,9 +1025,16 @@ const ACOES=[
   {id:'espacial',ico:'🚀',t:'Programa Espacial',cp:3,legislative:true,threshold:257,complexity:23,c:.050,cd:210,grupos:{uni:18,mil:8,emp:4},go:n=>{n.ciencia+=18;n.diplo+=8;n.mil+=5;n.aprovacao+=4;},msg:'Programa espacial nacional lançado'},
 ];
 const cpCusto=a=>Math.max(1,a.cp+(PLAYER?PLAYER._dCp||0:0));
-const podeUsar=a=>{if(!PLAYER)return false;const n=PLAYER,custo=a.c*n.pib,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
-  if(a.id==='reforco'&&!n.emGuerra)return false;
-  return (freeSci||cp>=cpCusto(a))&&(custo<=0||n.caixa>=custo)&&!(CD[a.id]>dia);};
+function actionCost(a){if(!PLAYER)return 0;const repeats=actionHistory[a.id]?.count||0;const mult=a.c>0?1+Math.min(.6,repeats*.08):1;return a.c*PLAYER.pib*mult;}
+function actionLockReason(a){
+  if(!PLAYER)return 'Partida não iniciada';const n=PLAYER,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude'),custo=actionCost(a);
+  if(a.id==='reforco'&&!n.emGuerra)return 'Disponível apenas durante guerra';
+  if((CD[a.id]||0)>dia)return `Recarga: ${(CD[a.id]-dia)} dias`;
+  if(!freeSci&&cp<cpCusto(a))return `Faltam ${cpCusto(a)-cp} CP`;
+  if(custo>0&&n.caixa<custo)return `Faltam ${money(custo-n.caixa)}`;
+  return '';
+}
+const podeUsar=a=>!actionLockReason(a);
 
 function chamberSeats(){
   if(!PLAYER)return {gov:0,und:0,opp:0};
@@ -1030,10 +1054,12 @@ function voteForecast(a,boost=0){
   return {expected:Math.round(expected),chance:Math.round(chance),needed:a.threshold||257,seats};
 }
 function executeAction(a){
-  const n=PLAYER,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude');
-  if(!freeSci)cp-=cpCusto(a);n.caixa-=a.c*n.pib;a.go(n);
+  const n=PLAYER,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude'),realCost=actionCost(a);
+  if(!freeSci)cp-=cpCusto(a);n.caixa-=realCost;a.go(n);
   if(a.grupos)Object.entries(a.grupos).forEach(([k,v])=>{if(n.grupos[k]!==undefined)n.grupos[k]=clamp(n.grupos[k]+v,0,100);});
-  clampAll();CD[a.id]=dia+a.cd;registerAction(a.t);refresh();updateMetaHud();
+  const hist=actionHistory[a.id]||(actionHistory[a.id]={count:0,last:-999});
+  if(dia-hist.last<180&&hist.count>=2){n.aprovacao-=1.5;n.legitimidade-=1;addBulletin('⚠️','Retorno decrescente',`Repetir ${a.t} em excesso reduziu a confiança pública.`,'warn','results');}
+  hist.count++;hist.last=dia;clampAll();CD[a.id]=dia+a.cd+Math.min(45,hist.count*3);registerAction(a.id);recordLeadershipFromAction(a);refresh();updateMetaHud();
   addBulletin(a.ico,`${a.t} aprovado`,a.msg,'act','results');
   gerarNarrativaAcao(a);
 }
@@ -1133,9 +1159,9 @@ function refresh(){
   [['emp'],['mil'],['sind'],['sau'],['uni']].forEach(([k])=>{const v=Math.round(n.grupos[k]),c=v<30?'var(--rose)':v<50?'var(--amber)':'var(--teal)';
     $(`g_${k}`).style.width=v+'%';$(`g_${k}`).style.background=c;$(`gv_${k}`).textContent=v;});
   const af=ACOES.filter(a=>a.id!=='reforco'||n.emGuerra);
-  $('actionRow').innerHTML=af.map(a=>{const off=!podeUsar(a),cdL=(CD[a.id]||0)-dia,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude'),custo=a.c*n.pib;
-    return `<button class="acard ${off?'off':''}" data-a="${a.id}" ${off?'disabled':''}><div class="ai">${a.ico}</div><div class="at">${a.t}</div><div class="ac">${freeSci?'0':cpCusto(a)} CP</div><div class="am">${custo<0?'+':''}${money(Math.abs(custo))}</div><span class="actionVote ${a.legislative?'':'exec'}">${a.legislative?'🏛 VOTAÇÃO':'⚡ EXECUTIVO'}</span>${cdL>0?`<div class="cblk">${cdL}d</div>`:''}</button>`;}).join('');
-  $('actionRow').querySelectorAll('.acard').forEach(b=>{b.onclick=()=>{const a=ACOES.find(x=>x.id===b.dataset.a);if(a)usar(a);};});
+  $('actionRow').innerHTML=af.map(a=>{const reason=actionLockReason(a),off=!!reason,freeSci=n._freeSci&&(a.id==='ciencia'||a.id==='saude'),custo=actionCost(a);
+    return `<button class="acard ${off?'off':''}" data-a="${a.id}" title="${reason||a.msg}"><div class="ai">${a.ico}</div><div class="at">${a.t}</div><div class="ac">${freeSci?'0':cpCusto(a)} CP</div><div class="am">${custo<0?'+':''}${money(Math.abs(custo))}</div><span class="actionVote ${a.legislative?'':'exec'}">${a.legislative?'🏛 VOTAÇÃO':'⚡ EXECUTIVO'}</span><div class="actionReason">${reason||'DISPONÍVEL'}</div></button>`;}).join('');
+  $('actionRow').querySelectorAll('.acard').forEach(b=>{b.onclick=()=>{const a=ACOES.find(x=>x.id===b.dataset.a);if(!a)return;const reason=actionLockReason(a);if(reason){addBulletin('🔒',`${a.t} indisponível`,reason,'warn','results');headline(reason);return;}usar(a);};});
   // ---- PAINEL RELAÇÕES ----
   let relHtml='';
   if(n.aliados.length)relHtml+=n.aliados.map(a=>`<span title="Aliado: ${a.nome}" style="font-size:18px;cursor:pointer" onclick="openDossier(NATIONS.find(x=>x.nome==='${a.nome}'))">${flag(a.nome)}</span>`).join('');
@@ -1432,10 +1458,58 @@ function tickGuerra(){if(!PLAYER)return;const n=PLAYER,t=n.warTarget;if(!t)retur
   n.caixa-=n.pib*.0004;n.aprovacao-=.06;n.grupos.mil+=.04;
   if(t.warStrength<=0)vitoriaGuerra(n,t);else if(n.warStrength<=0)derrotaGuerra(n,t);}
 
+
+/* ===== PERFIL PRESIDENCIAL, CRISES INTERATIVAS E PAUTAS ===== */
+function recordLeadership(tags={}){Object.entries(tags).forEach(([k,v])=>{if(leadership[k]!==undefined)leadership[k]+=v;});updateLeaderProfile();}
+function recordLeadershipFromAction(a){
+ const map={excecao:{autoridade:5,democracia:-4},propag:{populismo:4,democracia:-2},militar:{militar:3},reforco:{militar:3},social:{social:3},renda:{social:4,populismo:2},saude:{social:2},educacao:{social:2,tecnologia:2},ciencia:{tecnologia:4},digital:{tecnologia:4,democracia:1},privatiza:{mercado:5},austeridade:{mercado:4,social:-3},diplo:{diplomacia:4},comercio:{mercado:2,diplomacia:2},anticorr:{democracia:5},seguranca:{autoridade:2},inteligencia:{autoridade:1,militar:1}};
+ recordLeadership(map[a.id]||{});
+}
+function leaderArchetype(){
+ const L=leadership,entries=[['Ditador',L.autoridade-L.democracia,'Centraliza poder, enfraquece controles e governa pela força.'],['Democrata',L.democracia,'Valoriza instituições, transparência e negociação.'],['Militarista',L.militar,'Prioriza defesa, força e projeção estratégica.'],['Diplomata',L.diplomacia,'Constrói influência por alianças e negociação.'],['Tecnocrata',L.tecnologia,'Confia em ciência, dados e modernização do Estado.'],['Social',L.social,'Prioriza serviços públicos e proteção da população.'],['Liberal',L.mercado,'Prefere mercado, austeridade e iniciativa privada.'],['Populista',L.populismo,'Busca apoio direto e decisões de impacto imediato.']];
+ entries.sort((a,b)=>b[1]-a[1]);return entries[0][1]<3?['Pragmático',0,'Seu estilo ainda não está definido.']:entries[0];
+}
+function updateLeaderProfile(){const [title,score,desc]=leaderArchetype();const box=$('leaderProfile');if(!box||!PLAYER)return;box.classList.add('on');$('lpTitle').textContent=title;$('lpScore').textContent=(score>=0?'+':'')+Math.round(score);$('lpDesc').textContent=desc;$('lpFill').style.width=clamp(8+Math.abs(score)*5,8,100)+'%';}
+function visualizeWorldCrisis(a,b,type='military'){
+ const colors=type==='aid'?['rgba(52,211,153,.08)','#34d399']:type==='nuclear'?['rgba(251,75,100,.08)','#fb4b64']:['rgba(251,191,36,.08)','#fbbf24'];
+ ambientArcs.push({startLat:a.lat,startLng:a.lng,endLat:b.lat,endLng:b.lng,colors,altitude:type==='nuclear'?.26:.18,stroke:.16,dashLength:.1,dashGap:.12,animate:1200,_until:Date.now()+30000});pulseImpact(b,type==='aid'?'52,211,153':'251,75,100');queueGlobeRefresh();
+}
+function gerarEventoIntervencao(){
+ if(!PLAYER)return;const me=PLAYER,others=NATIONS.filter(x=>x!==me),a=pick(others),b=pick(others.filter(x=>x!==a));const roll=Math.random();
+ if(roll<.34){visualizeWorldCrisis(a,b,'nuclear');addTension(12,`${a.nome} ameaça realizar um ataque devastador contra ${b.nome}.`);showPopup('☢️',`ULTIMATO: ${a.nome} × ${b.nome}`,`<span class="worldDecisionBadge">EVENTO MUNDIAL AO VIVO</span><br>${a.nome} prepara um ataque de grande escala contra ${b.nome}. Sua inteligência pede uma decisão imediata.`,[
+  {l:'Intervir diplomaticamente',t:'Gasta influência e pode impedir o ataque.',efeito:'−2 influência · +diplomacia',go:m=>{if(influence<2){addBulletin('⚠️','Sem influência','A intervenção fracassou por falta de capital político.','bad','results');m.diplo-=3;return;}influence-=2;if(Math.random()<.65){addTension(-10,'A mediação internacional suspendeu o ataque.');m.diplo+=7;m.legitimidade+=3;recordLeadership({diplomacia:4,democracia:1});addBulletin('🕊️','Ataque suspenso',`${m.nome} liderou uma mediação bem-sucedida.`,'good','results');}else{m.diplo-=2;addBulletin('💥','Mediação fracassa',`${a.nome} ignora o apelo e mantém a operação.`,'bad','results');}},msg:'Intervenção diplomática'},
+  {l:'Enviar defesa a '+b.nome,t:'Ajuda militar cara e arriscada.',efeito:'Custo alto · tensão elevada',go:m=>{const cost=m.pib*.025;if(m.caixa<cost){m.aprovacao-=2;addBulletin('💸','Operação cancelada','O Tesouro não conseguiu financiar o apoio.','bad','results');return;}m.caixa-=cost;m.mil+=2;m.diplo+=4;addTension(5,'Forças internacionais entram em alerta máximo.');recordLeadership({militar:4,diplomacia:1});addBulletin('🛡️','Escudo internacional',`${m.nome} enviou defesa para ${b.nome}.`,'war','results');},msg:'Apoio militar enviado'},
+  {l:'Não intervir',t:'Preserva recursos, mas o mundo julgará sua omissão.',efeito:'Sem custo imediato',go:m=>{m.diplo-=4;m.legitimidade-=2;addTension(8,'A comunidade internacional falha em conter a escalada.');recordLeadership({autoridade:1});addBulletin('🌍','Omissão internacional',`${m.nome} decidiu não participar da crise.`,'warn','results');},msg:'Crise ignorada'}]);
+ }else if(roll<.68){visualizeWorldCrisis(me,b,'aid');showPopup('🌾',`Fome extrema em ${b.nome}`,`<span class="worldDecisionBadge">EMERGÊNCIA HUMANITÁRIA</span><br>Seca e colapso logístico deixaram milhões sem alimentos. A ONU solicita ajuda imediata.`,[
+  {l:'Enviar ajuda humanitária',t:'Financia alimentos e transporte.',efeito:'−1.2% do PIB em caixa',go:m=>{const c=m.pib*.012;if(m.caixa<c){addBulletin('💸','Ajuda inviável','O caixa não cobre a missão.','bad','results');return;}m.caixa-=c;m.diplo+=6;m.legitimidade+=4;m.aprovacao+=2;recordLeadership({social:4,diplomacia:3});visualizeWorldCrisis(m,b,'aid');addBulletin('❤️','Ponte humanitária',`${flag(m.nome)} ajuda chega a ${b.nome}.`,'good','results');},msg:'Ajuda enviada'},
+  {l:'Liderar coalizão internacional',t:'Custa influência, divide a conta.',efeito:'−2 influência · custo menor',go:m=>{if(influence<2){addBulletin('⚠️','Coalizão fracassa','Faltou influência para mobilizar parceiros.','bad','results');return;}influence-=2;m.caixa-=m.pib*.005;m.diplo+=9;m.legitimidade+=5;recordLeadership({diplomacia:5,social:2,democracia:1});addBulletin('🤝','Coalizão contra a fome',`${m.nome} mobilizou diversos países.`,'good','results');},msg:'Coalizão formada'},
+  {l:'Priorizar problemas nacionais',t:'Nenhum gasto externo.',efeito:'Aprovação interna pode subir',go:m=>{m.aprovacao+=1;m.diplo-=5;recordLeadership({populismo:2});addBulletin('🏠','Prioridade doméstica','O governo recusou a missão humanitária.','warn','results');},msg:'Ajuda recusada'}]);
+ }else{visualizeWorldCrisis(a,b,'military');showPopup('🛰️',`Incidente militar em ${b.nome}`,`<span class="worldDecisionBadge">ALERTA ESTRATÉGICO</span><br>Uma aeronave de ${a.nome} invadiu o espaço aéreo de ${b.nome}. Ambos pedem seu apoio.`,[
+  {l:'Exigir investigação internacional',t:'Resposta institucional e cautelosa.',efeito:'+legitimidade',go:m=>{m.diplo+=4;m.legitimidade+=4;recordLeadership({democracia:3,diplomacia:2});addTension(-3,'Investigadores internacionais assumem o caso.');},msg:'Investigação exigida'},
+  {l:'Apoiar '+b.nome,t:'Condena o invasor publicamente.',efeito:'Pode gerar sanções',go:m=>{m.diplo+=2;m.sancoes=Math.max(0,m.sancoes-1);recordLeadership({diplomacia:2,autoridade:1});addTension(3,'Blocos internacionais tomam posição.');},msg:'Apoio declarado'},
+  {l:'Explorar a crise comercialmente',t:'Lucro rápido com risco moral.',efeito:'+caixa · −legitimidade',go:m=>{m.caixa+=m.pib*.01;m.legitimidade-=5;recordLeadership({mercado:4,democracia:-1});},msg:'Crise explorada'}]);}
+}
+const CONGRESS_TOPICS=[
+ {ico:'🌐',title:'Lei de Ajuda Internacional',desc:'Cria um fundo permanente para crises humanitárias no exterior.',good:'Melhora a imagem mundial, mas aumenta gastos.',threshold:257,complexity:16,cost:.012,effect:m=>{m.diplo+=8;m.legitimidade+=3;m.caixa-=m.pib*.012;recordLeadership({social:2,diplomacia:3});}},
+ {ico:'🔒',title:'Lei de Vigilância Nacional',desc:'Amplia monitoramento digital para prevenir ameaças internas.',good:'Aumenta segurança, reduz liberdades civis.',threshold:257,complexity:18,cost:.008,effect:m=>{m.estabilidade+=10;m.legitimidade-=8;m.ciencia+=2;recordLeadership({autoridade:5,democracia:-4});}},
+ {ico:'🌳',title:'Pacto de Proteção Ambiental',desc:'Restringe desmatamento e cria metas nacionais obrigatórias.',good:'Benefício global com custo industrial.',threshold:257,complexity:20,cost:.016,effect:m=>{m.diplo+=6;m.ciencia+=4;m.pib*=.995;m.aprovacao+=3;recordLeadership({social:2,diplomacia:2});}},
+ {ico:'💼',title:'Desregulamentação Econômica',desc:'Reduz regras trabalhistas e ambientais para atrair investimentos.',good:'Pode acelerar o PIB e piorar proteção social.',threshold:257,complexity:22,cost:-.012,effect:m=>{m.pib*=1.025;m.caixa+=m.pib*.012;m.aprovacao-=5;m.grupos.emp+=10;m.grupos.sind-=14;recordLeadership({mercado:5,social:-3});}},
+ {ico:'⚖️',title:'Lei de Transparência Total',desc:'Obriga divulgação de contratos, emendas e patrimônio de autoridades.',good:'Combate corrupção, mas irrita a coalizão.',threshold:308,complexity:24,cost:.006,effect:m=>{m.legitimidade+=14;m.corrupcao-=12;m.congresso-=4;recordLeadership({democracia:6});}},
+ {ico:'🚧',title:'Fechamento de Fronteiras',desc:'Suspende imigração e restringe circulação internacional.',good:'Agrada setores nacionalistas, prejudica diplomacia e economia.',threshold:257,complexity:17,cost:.004,effect:m=>{m.estabilidade+=4;m.aprovacao+=3;m.diplo-=10;m.pib*=.992;recordLeadership({autoridade:4,populismo:3,diplomacia:-3});}}
+];
+function gerarPautaCongresso(){
+ if(!PLAYER)return;const t=pick(CONGRESS_TOPICS);const a={id:'tema_'+Date.now(),t:t.title,ico:t.ico,cp:1,legislative:true,threshold:t.threshold,complexity:t.complexity,c:t.cost,cd:0,grupos:{},go:m=>t.effect(m),msg:t.good};
+ const f=voteForecast(a);showPopup(t.ico,`PAUTA DO CONGRESSO — ${t.title}`,`${t.desc}<div class="voteForecast"><div class="voteForecastTop"><span>Chance atual</span><b>${f.chance}%</b></div><div class="voteTrack"><i style="width:${f.chance}%"></i></div><div class="voteNote">${t.good} São necessários ${t.threshold} votos.</div></div>`,[
+  {l:'Apoiar e levar ao plenário',t:'O governo assume a autoria política.',efeito:`Chance: ${f.chance}%`,go:()=>attemptVote(a,5,0),msg:'Pauta apoiada'},
+  {l:'Negociar texto moderado',t:'Gasta 2 influência e melhora a chance.',efeito:`Chance: ${voteForecast(a,20).chance}%`,go:()=>{if(influence<2){addBulletin('⚠️','Influência insuficiente','A pauta foi adiada.','warn','results');return;}attemptVote(a,20,2);},msg:'Texto negociado'},
+  {l:'Mobilizar contra',t:'O governo trabalha para derrubar a proposta.',efeito:'Risco de desgaste',go:m=>{const success=Math.random()*100<clamp(60+(chamberSeats().gov-220)*.15,20,90);if(success){m.congresso+=2;m.legitimidade-=1;addBulletin('🛑','Pauta derrotada',`${t.title} foi barrada pelo governo.`,'act','results');}else{m.aprovacao-=3;m.congresso-=3;addBulletin('⚠️','Rebelião parlamentar',`A pauta avançou apesar da oposição do Planalto.`,'bad','results');}},msg:'Governo se opôs'},
+  {l:'Liberar a bancada',t:'Cada deputado votará por conta própria.',efeito:'Resultado imprevisível',go:()=>attemptVote(a,-8,0),msg:'Bancada liberada'}]);
+}
+
 /* ===== POPUP ===== */
 function showPopup(ico,title,desc,choices){
   speed=0;document.querySelectorAll('.spd button').forEach(b=>{b.classList.remove('act');if(b.dataset.s==='0')b.classList.add('act');});
-  $('pIco').textContent=ico;$('pTitle').textContent=title;if(String(desc).includes('voteForecast'))$('pDesc').innerHTML=desc;else $('pDesc').textContent=desc;
+  $('pIco').textContent=ico;$('pTitle').textContent=title;if(String(desc).includes('voteForecast')||String(desc).includes('worldDecisionBadge'))$('pDesc').innerHTML=desc;else $('pDesc').textContent=desc;
   $('pChoices').innerHTML=choices.map((c,i)=>`<button class="popt ${c.war?'war-opt':''}" data-i="${i}"><span class="pl">${c.l}</span>${c.t||''}<span class="pe">${c.efeito||''}</span></button>`).join('');
   $('pChoices').querySelectorAll('.popt').forEach(b=>{b.onclick=()=>{const c=choices[+b.dataset.i];if(PLAYER)c.go(PLAYER);clampAll();
     addBulletin('📋','Sua decisão',c.msg||c.l,'act');refresh();$('popup').classList.remove('on');
@@ -1513,12 +1587,11 @@ function tick(dt){
     // ---- ACORDOS COMERCIAIS: bônus mensal ----
     if(dia%30===0&&n.acordos.length){
       n.acordos.forEach(ac=>{ac.meses--;n.pib*=1+(ac.bonus/12);});
-      n.acordos=n.acordos.filter(ac=>{
-        if(ac.meses<=0){
-          addBulletin('⏱️','Acordo expirado',`Parceria com ${ac.nacao} encerrada.`,'warn');
-          return false;
-        }return true;
-      });
+      const expired=n.acordos.filter(ac=>ac.meses<=0);n.acordos=n.acordos.filter(ac=>ac.meses>0);
+      expired.forEach(ac=>{const partner=NATIONS.find(x=>x.nome===ac.nacao);showPopup('📜','Acordo comercial encerrado',`O acordo com ${flag(ac.nacao)} ${ac.nacao} chegou ao fim. Renovar mantém o bônus comercial por mais 12 meses.`,[
+        {l:'Renovar acordo',t:'Custa 1 CP e pequena taxa diplomática.',efeito:'+12 meses de comércio',go:m=>{if(cp<1||m.caixa<m.pib*.004){addBulletin('⚠️','Renovação impossível','Falta CP ou caixa para renovar.','bad','results');return;}cp--;m.caixa-=m.pib*.004;m.acordos.push({...ac,meses:12});m.diplo+=2;addBulletin('🤝','Acordo renovado',`Parceria com ${ac.nacao} foi renovada por 12 meses.`,'good','results');if(partner)visualizeWorldCrisis(m,partner,'aid');},msg:'Acordo renovado'},
+        {l:'Renegociar termos',t:'Gasta 2 influência por bônus maior.',efeito:'Bônus comercial ampliado',go:m=>{if(influence<2){addBulletin('⚠️','Sem influência','A renegociação fracassou.','bad','results');return;}influence-=2;m.acordos.push({...ac,meses:12,bonus:Math.min(.014,(ac.bonus||.008)+.002)});m.diplo+=3;addBulletin('📈','Novo acordo comercial',`Termos melhores foram acertados com ${ac.nacao}.`,'good','results');},msg:'Termos renegociados'},
+        {l:'Não renovar',t:'A parceria termina sem custo.',efeito:'Perde o bônus comercial',go:m=>{m.diplo-=1;addBulletin('⏱️','Acordo encerrado',`O governo deixou o acordo com ${ac.nacao} expirar.`,'warn','results');},msg:'Acordo não renovado'}]);});
     }
 
     // ---- RESISTÊNCIA INTERNA: consequências ----

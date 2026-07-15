@@ -2132,6 +2132,73 @@ Function(`${document.getElementById('deferred-v9-source').textContent}\nwindow.p
 </script>
 
 <style>
+/* ===== V15 — central estratégica integrada ===== */
+#strategyPanel{position:fixed;left:176px;top:78px;bottom:238px;width:330px;z-index:72;display:none;flex-direction:column;border:1px solid rgba(125,211,252,.18);border-radius:18px;background:rgba(3,8,15,.97);box-shadow:0 25px 80px rgba(0,0,0,.58);overflow:hidden}#strategyPanel.on{display:flex}
+.strategyHead{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.07)}.strategyHead strong{font:900 11px var(--mono);letter-spacing:.12em}.strategyHead button{width:32px;height:32px;border:0;border-radius:9px;background:rgba(255,255,255,.06);color:#aab8ca}
+.strategyTabs{display:flex;overflow-x:auto;padding:7px;gap:4px;border-bottom:1px solid rgba(255,255,255,.06)}.strategyTabs button{white-space:nowrap;padding:7px 9px;border:1px solid transparent;border-radius:8px;background:transparent;color:#6f829b;font:800 7px var(--mono)}.strategyTabs button.active{color:#7cecff;border-color:rgba(34,211,238,.25);background:rgba(34,211,238,.08)}
+#strategyBody{padding:12px;overflow-y:auto}.strategicCard{padding:10px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);border-radius:12px;background:rgba(255,255,255,.025)}.strategicCard small{display:block;color:#71849d;font:700 7px var(--mono);letter-spacing:.1em}.strategicCard strong{display:block;font-size:12px;margin:4px 0}.strategicCard p{font-size:10px;line-height:1.5;color:#94a6bb}.strategicCard .meter{height:5px;background:rgba(255,255,255,.06);border-radius:9px;overflow:hidden;margin-top:7px}.strategicCard .meter i{display:block;height:100%;background:linear-gradient(90deg,#fb7185,#fbbf24,#34d399)}
+.strategicActions{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.strategicActions button{min-height:32px;padding:6px 8px;border:1px solid rgba(125,211,252,.18);border-radius:8px;background:rgba(56,189,248,.06);color:#9edfff;font:800 7px var(--mono)}
+.blocBadge{display:inline-block;margin:2px;padding:4px 6px;border-radius:6px;background:rgba(167,139,250,.1);color:#c4b5fd;font:800 7px var(--mono)}
+#soundToggle{color:#94a3b8!important}
+@media(max-width:1180px) and (min-width:821px){#strategyPanel{left:78px;width:300px}}
+@media(max-width:820px){#strategyPanel{left:6px;right:6px;top:auto;bottom:78px;width:auto;height:76dvh;border-radius:20px}.strategyTabs button{min-height:38px}#strategyBody{padding-bottom:24px}.strategicActions button{min-height:44px}}
+</style>
+<script>
+/* ===== V15 — IA, blocos, projetos, gabinete, mercados e inteligência ===== */
+(function(){
+  const BLOCS={
+    OTAN:['Estados Unidos','Canadá','Reino Unido','França','Alemanha','Itália','Espanha','Portugal','Polônia','Noruega','Suécia','Países Baixos','Bélgica','Grécia','Romênia','Turquia'],
+    UE:['França','Alemanha','Itália','Espanha','Portugal','Polônia','Países Baixos','Bélgica','Áustria','Grécia','Romênia','Suécia'],
+    BRICS:['Brasil','Rússia','Índia','China','África do Sul','Egito','Etiópia','Irã','Emirados Árabes'],
+    MERCOSUL:['Brasil','Argentina','Uruguai','Paraguai','Bolívia'],
+    ASEAN:['Indonésia','Vietnã','Tailândia','Filipinas','Malásia','Singapura'],
+    OPEP:['Arábia Saudita','Irã','Iraque','Emirados Árabes','Nigéria','Argélia','Venezuela'],
+    G7:['Estados Unidos','Canadá','Reino Unido','França','Alemanha','Itália','Japão']
+  };
+  const DOCTRINES=['comercial','defensiva','expansionista','tecnológica','diplomática','nacionalista'];
+  const interests={'comercial':'mercados e rotas de exportação','defensiva':'fronteiras e alianças militares','expansionista':'influência regional','tecnológica':'ciência e semicondutores','diplomática':'organizações multilaterais','nacionalista':'soberania e poder interno'};
+  NATIONS.forEach(n=>{n.doctrine=n.doctrine||DOCTRINES[Math.abs(Math.round(n.lat+n.lng+n.mil))%DOCTRINES.length];n.blocs=Object.keys(BLOCS).filter(b=>BLOCS[b].includes(n.nome));n.aiAmbition=clamp((n.mil+n.diplo)/2+Math.random()*15,20,100);});
+  const cabinet=[['Economia','Marina Duarte'],['Defesa','Caio Ferraz'],['Relações Exteriores','Helena Prado'],['Saúde','Rafael Nunes'],['Justiça','Lívia Martins']].map(([role,name],i)=>({role,name,skill:58+((i*13)%29),loyalty:52+((i*17)%38),scandal:0}));
+  let projects=[],intel=42,electionOpponent=34,soundOn=false,lastAiCycle=-1;
+  const commodities={'petróleo':82,'alimentos':106,'gás':74,'semicondutores':118,'minérios':91,'armas':112};
+  const conflicts=[{a:'Rússia',b:'Ucrânia',name:'Guerra na Ucrânia',intensity:82,front:54},{a:'Estados Unidos',b:'Irã',name:'Crise EUA–Irã',intensity:68,front:50}];
+
+  document.body.insertAdjacentHTML('beforeend','<section id="strategyPanel"><div class="strategyHead"><strong>CENTRAL ESTRATÉGICA</strong><button id="strategyClose">✕</button></div><div class="strategyTabs"><button data-st="world" class="active">MUNDO</button><button data-st="blocs">BLOCOS</button><button data-st="projects">PROJETOS</button><button data-st="cabinet">GABINETE</button><button data-st="markets">MERCADOS</button><button data-st="intel">INTEL</button></div><div id="strategyBody"></div></section>');
+  const help=document.querySelector('#leftRail [data-rail="help"]');if(help){help.insertAdjacentHTML('beforebegin','<button class="railBtn" id="strategyOpen" title="Central estratégica"><span>◈</span><b>ESTRATÉGIA</b></button>');}
+  const mobileTools=document.getElementById('mobileUtilities');if(mobileTools)mobileTools.insertAdjacentHTML('beforeend','<button id="mobileStrategy">◈ ESTRATÉGIA</button>');
+  document.getElementById('strategyOpen')?.addEventListener('click',()=>{document.getElementById('strategyPanel').classList.toggle('on');renderStrategy('world');});document.getElementById('strategyClose').onclick=()=>document.getElementById('strategyPanel').classList.remove('on');
+  document.getElementById('mobileStrategy')?.addEventListener('click',()=>{document.getElementById('strategyPanel').classList.add('on');renderStrategy('world');});
+  document.querySelectorAll('.strategyTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.strategyTabs button').forEach(x=>x.classList.toggle('active',x===b));renderStrategy(b.dataset.st);});
+
+  function card(k,t,p,extra=''){return `<div class="strategicCard"><small>${k}</small><strong>${t}</strong><p>${p}</p>${extra}</div>`;}
+  function renderStrategy(tab){const body=document.getElementById('strategyBody');if(!body)return;
+    if(tab==='world')body.innerHTML=conflicts.map(c=>card('CONFLITO PERSISTENTE',c.name,`Intensidade ${Math.round(c.intensity)}% · controle da frente ${Math.round(c.front)}%`,`<div class="meter"><i style="width:${c.intensity}%"></i></div><div class="strategicActions"><button data-mediate="${c.name}">MEDIAR</button><button data-support="${c.name}">AJUDA HUMANITÁRIA</button></div>`)).join('')+card('ELEIÇÃO',`Governo ${Math.round(PLAYER?.aprovacao||0)}% × oposição ${Math.round(electionOpponent)}%`,'A campanha reage à economia, crises e promessas cumpridas.');
+    if(tab==='blocs')body.innerHTML=Object.entries(BLOCS).map(([b,m])=>card('ORGANIZAÇÃO INTERNACIONAL',b,`${m.length} membros no jogo. ${PLAYER&&m.includes(PLAYER.nome)?'Seu país é membro e possui obrigações políticas.':'Seu país não integra este bloco.'}`,m.slice(0,10).map(x=>`<span class="blocBadge">${flag(x)} ${x}</span>`).join(''))).join('');
+    if(tab==='projects')body.innerHTML=projects.length?projects.map(p=>card(p.done?'CONCLUÍDO':'EM EXECUÇÃO',p.name,`${p.done?'Entregue':p.days+' dias restantes'} · orçamento ${money(p.cost)}`,`<div class="meter"><i style="width:${100-p.days/p.total*100}%"></i></div>`)).join(''):card('SEM OBRAS ATIVAS','Carteira vazia','Ações de infraestrutura, energia, habitação e ciência criarão projetos plurimensais.');
+    if(tab==='cabinet')body.innerHTML=cabinet.map((m,i)=>card(m.role,m.name,`Competência ${m.skill} · lealdade ${m.loyalty}${m.scandal?' · sob investigação':''}`,`<div class="strategicActions"><button data-minister="${i}">COBRAR RESULTADOS</button></div>`)).join('');
+    if(tab==='markets')body.innerHTML=Object.entries(commodities).map(([k,v])=>card('RECURSO ESTRATÉGICO',k.toUpperCase(),`Índice mundial ${Math.round(v)} · ${v>115?'escassez e preços elevados':v<85?'oferta abundante':'mercado estável'}`,`<div class="meter"><i style="width:${clamp(v/1.5,5,100)}%"></i></div>`)).join('');
+    if(tab==='intel')body.innerHTML=card('CONFIANÇA DOS RELATÓRIOS',`${Math.round(intel)}%`,'Quanto maior a inteligência, mais previsíveis ficam guerras, votações e crises.',`<div class="meter"><i style="width:${intel}%"></i></div><div class="strategicActions"><button data-intel="network">AMPLIAR REDE</button><button data-intel="cyber">OPERAÇÃO CIBERNÉTICA</button><button id="soundToggle">${soundOn?'SOM ATIVO':'ATIVAR SOM'}</button></div>`);
+    bindStrategy();
+  }
+  function bindStrategy(){document.querySelectorAll('[data-mediate]').forEach(b=>b.onclick=()=>{if(influence<2)return addBulletin('⚠️','Influência insuficiente','A mediação exige 2 pontos.','warn','results');influence-=2;const c=conflicts.find(x=>x.name===b.dataset.mediate);c.intensity=Math.max(10,c.intensity-12);PLAYER.diplo+=5;addTension(-4,'Uma rodada de mediação reduz a tensão.');renderStrategy('world');});document.querySelectorAll('[data-support]').forEach(b=>b.onclick=()=>{const cost=PLAYER.pib*.006;if(PLAYER.caixa<cost)return;PLAYER.caixa-=cost;PLAYER.legitimidade+=4;PLAYER.diplo+=4;addBulletin('✚','Ajuda humanitária','Comboios foram enviados para a zona de conflito.','good','results');});document.querySelectorAll('[data-minister]').forEach(b=>b.onclick=()=>{const m=cabinet[+b.dataset.minister];m.loyalty-=4;m.skill=Math.min(100,m.skill+2);addBulletin('🏛️','Cobrança no gabinete',`${m.name} recebeu novas metas.`,'act','results');renderStrategy('cabinet');});document.querySelectorAll('[data-intel]').forEach(b=>b.onclick=()=>{const cost=PLAYER.pib*(b.dataset.intel==='cyber'?.008:.012);if(PLAYER.caixa<cost)return;PLAYER.caixa-=cost;intel=clamp(intel+(b.dataset.intel==='cyber'?12:18),0,100);PLAYER.ciencia+=2;addBulletin('🛰️','Inteligência ampliada',`Confiança dos relatórios chegou a ${Math.round(intel)}%.`,'good','results');renderStrategy('intel');});document.getElementById('soundToggle')?.addEventListener('click',()=>{soundOn=!soundOn;beep(520,.12);renderStrategy('intel');});}
+
+  function beep(freq=360,dur=.08){if(!soundOn)return;try{const C=window.AudioContext||window.webkitAudioContext,a=new C(),o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;g.gain.value=.025;o.connect(g);g.connect(a.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.stop(a.currentTime+dur);}catch(e){}}
+  function startProject(a){if(!['infra','ferrovias','energia','habitacao','espacial','educacao'].includes(a.id))return;const days=Math.round((a.cd||90)*(.9+Math.random()*.5)),minister=cabinet[a.id==='espacial'||a.id==='educacao'?3:0];projects.push({id:a.id+'_'+dia,name:a.t,total:days,days,cost:Math.abs(a.c)*PLAYER.pib,minister:minister.name,done:false});addBulletin('🏗️','Projeto iniciado',`${a.t} será acompanhado por ${minister.name}.`,'act','results');}
+  const executeV15=executeAction;executeAction=function(a){const r=executeV15(a);startProject(a);return r;};
+
+  function aiCycle(){const actors=NATIONS.filter(n=>n!==PLAYER);for(let i=0;i<5;i++){const a=pick(actors),targets=actors.filter(n=>n!==a),b=pick(targets),rel=EMWorld.relation(a,b);if(a.doctrine==='comercial'&&rel>-20){a.pib*=1.002;EMWorld.changeRelation(a,b,3);}else if(a.doctrine==='diplomática'){a.diplo=clamp(a.diplo+1,0,100);EMWorld.changeRelation(a,b,2);}else if((a.doctrine==='expansionista'||a.doctrine==='nacionalista')&&rel<-35){EMWorld.changeRelation(a,b,-5);worldTension=clamp(worldTension+1,0,100);}else a.ciencia=clamp(a.ciencia+.4,0,100);}if(Math.random()<.45){const a=pick(actors);addBulletin('🌐',`${a.nome} age no cenário mundial`,`${a.nome} prioriza ${interests[a.doctrine]}.`,'act','general');}}
+  function monthlySystems(){projects.forEach(p=>{if(p.done)return;p.days-=30;if(p.days<=0){p.days=0;p.done=true;PLAYER.aprovacao+=3;PLAYER.pib*=1.006;addBulletin('✅','Projeto entregue',`${p.name} foi concluído pelo gabinete.`,'good','results');beep(680,.15);}});conflicts.forEach(c=>{c.intensity=clamp(c.intensity+(Math.random()-.52)*10,8,100);c.front=clamp(c.front+(Math.random()-.5)*8,10,90);});const warPressure=conflicts.reduce((s,c)=>s+c.intensity,0)/100;commodities['petróleo']=clamp(commodities['petróleo']+(Math.random()-.45)*5+warPressure,45,180);commodities['gás']=clamp(commodities['gás']+(Math.random()-.48)*5+warPressure*.6,40,170);commodities.alimentos=clamp(commodities.alimentos+(Math.random()-.5)*6,55,160);commodities.armas=clamp(commodities.armas+warPressure*.8-1,70,180);PLAYER.pib*=1-Math.max(0,commodities['petróleo']-120)*.000012;}
+  function electionCycle(){electionOpponent=clamp(100-PLAYER.aprovacao+(Math.random()-.5)*9,18,78);const lead=PLAYER.aprovacao-electionOpponent;addBulletin('🗳️','Pesquisa eleitoral',`${lead>=0?'Governo lidera':'Oposição lidera'} por ${Math.abs(Math.round(lead))} pontos.` ,lead>=0?'good':'warn','general');if(lead<0)PLAYER.congresso-=1;}
+  const tickV15=tick;tick=function(dt){const before=dia,r=tickV15(dt);if(PLAYER&&dia!==before){if(dia%30===0)monthlySystems();if(dia%60===0&&lastAiCycle!==dia){lastAiCycle=dia;aiCycle();}if(dia%120===0)electionCycle();if(dia%180===0&&Math.random()<.35){const m=pick(cabinet);m.scandal=1;m.loyalty-=10;PLAYER.legitimidade-=3;addBulletin('🧾','Crise no gabinete',`${m.name} enfrenta denúncias e pressão para sair.`,'bad','general');}}return r;};
+  const dossierV15=openDossier;openDossier=function(n){const r=dossierV15(n);const old=document.getElementById('geoProfile');old?.remove();const blocs=(n.blocs||[]).map(b=>`<span class="blocBadge">${b}</span>`).join('')||'<span class="blocBadge">NÃO ALINHADO</span>';$('dTrait').insertAdjacentHTML('afterend',`<div id="geoProfile" class="strategicCard"><small>DOUTRINA NACIONAL</small><strong>${n.doctrine.toUpperCase()}</strong><p>Interesse principal: ${interests[n.doctrine]}.</p>${blocs}</div>`);if(PLAYER&&n!==PLAYER){$('dBtns').insertAdjacentHTML('beforeend',`<button class="dbtn dbtn-t" id="btnAidV15">✚ Enviar ajuda</button><button class="dbtn dbtn-w" id="btnSanctionV15">🚫 Aplicar sanções</button><button class="dbtn dbtn-t" id="btnIntelV15">🛰️ Operação de inteligência</button>`);$('btnAidV15').onclick=()=>{const cost=PLAYER.pib*.006;if(PLAYER.caixa<cost)return;PLAYER.caixa-=cost;PLAYER.diplo+=3;PLAYER.legitimidade+=2;EMWorld.changeRelation(PLAYER,n,12);addBulletin('✚','Ajuda internacional',`${PLAYER.nome} enviou ajuda para ${n.nome}.`,'good','results');};$('btnSanctionV15').onclick=()=>{if(influence<1)return;influence--;n.sancoes=Math.min(5,n.sancoes+1);EMWorld.changeRelation(PLAYER,n,-24);PLAYER.diplo-=2;addBulletin('🚫','Sanções aplicadas',`${n.nome} promete retaliar economicamente.`,'bad','results');};$('btnIntelV15').onclick=()=>{const cost=PLAYER.pib*.004;if(PLAYER.caixa<cost)return;PLAYER.caixa-=cost;intel=clamp(intel+5,0,100);addBulletin('🛰️','Relatório confidencial',`Inteligência mapeou interesses de ${n.nome}: ${interests[n.doctrine]}.`,'act','results');};}return r;};
+  const endV15=end;end=function(t,c,txt){const r=endV15(t,c,txt);if(PLAYER){const done=projects.filter(p=>p.done).length,blocCount=PLAYER.blocs?.length||0;$('oText').insertAdjacentHTML('beforeend',`<br><br><strong style="color:#7cecff">RETROSPECTIVA ESTRATÉGICA</strong><br>${done} projetos entregues · ${blocCount} blocos internacionais · inteligência ${Math.round(intel)}% · oposição ${Math.round(electionOpponent)}%.`);}return r;};
+  const startV15=startGame;startGame=function(n){const r=startV15(n);try{const s=JSON.parse(localStorage.getItem('estadoMaior.v15.strategy')||'null');if(s){projects.splice(0,projects.length,...(s.projects||[]));Object.assign(commodities,s.commodities||{});intel=s.intel??intel;electionOpponent=s.electionOpponent??electionOpponent;(s.cabinet||[]).forEach((m,i)=>Object.assign(cabinet[i]||{},m));}}catch(e){}return r;};
+  window.addEventListener('beforeunload',()=>{if(PLAYER)localStorage.setItem('estadoMaior.v15.strategy',JSON.stringify({projects,commodities,intel,electionOpponent,cabinet}));});
+  window.EMStrategy={BLOCS,conflicts,commodities,cabinet,projects};
+})();
+</script>
+
+<style>
 /* ===== MOBILE V12 — interface feita para toque ===== */
 @media(max-width:820px){
   :root{--mobile-gap:8px;--mobile-nav-h:66px}
@@ -2303,6 +2370,7 @@ body.game-on #v11Tools{display:flex}
   const baseTick=tick;
   tick=function(dt){const before=dia,r=baseTick(dt);if(PLAYER&&dia!==before){updateMacro();if(dia%45===0)autonomousWorld();if(dia%30===0)saveGame(true);if(dia%90===0){PLAYER.aprovacao-=Math.max(0,macro.inflation-7)*.08;PLAYER.estabilidade-=Math.max(0,macro.unemployment-10)*.06;}}return r;};
   window.addEventListener('beforeunload',()=>{if(PLAYER)saveGame(true);});
+  window.EMWorld={relation,changeRelation,relationKey,relationStatus,saveGame};
 })();
 </script>
 
@@ -2384,6 +2452,7 @@ body.game-on #v11Tools{display:flex}
   refresh=function(){const result=refreshV14();const cpEl=document.getElementById('desktopCp'),infEl=document.getElementById('desktopInfluence');if(cpEl)cpEl.textContent=`${cp}/${CP_MAX}`;if(infEl)infEl.textContent=influence;return result;};
 })();
 </script>
+
 
 
 

@@ -1,5 +1,15 @@
 /* Estado Maior V30 — preview de ação, alerta doom, chance no card */
 
+/* Popup sempre acima do resultado imediato (V28 z-index:220, popup tinha 60) */
+#popup { z-index: 400 !important; }
+
+/* Esconde resultado imediato quando popup está aberto */
+body.popup-open #actionResultV28 {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+
 /* ===== 1. PREVIEW DE AÇÃO NO HOVER ===== */
 .acard { position: relative; }
 

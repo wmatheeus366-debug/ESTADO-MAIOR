@@ -229,3 +229,16 @@
 
   window.EMV30 = { injectActionPreviews, updateDoomAlert };
 })();
+
+/* ===================================================
+   PARTE EXTRA — Sincroniza popup-open no body
+   para esconder o actionResultV28 quando popup abre
+=================================================== */
+(function () {
+  const popup = document.getElementById('popup');
+  if (!popup) return;
+  const obs = new MutationObserver(() => {
+    document.body.classList.toggle('popup-open', popup.classList.contains('on'));
+  });
+  obs.observe(popup, { attributes: true, attributeFilter: ['class'] });
+})();
